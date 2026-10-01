@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:hr-time-leave:ticket-schema:v1",
+  "title": "HR Time and Leave Ticket",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ticket_id",
+    "employee_id",
+    "manager_id",
+    "ticket_type",
+    "status",
+    "created_at"
+  ],
+  "properties": {
+    "ticket_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "employee_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "manager_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ticket_type": {
+      "enum": [
+        "ANNUAL_LEAVE",
+        "SICK_LEAVE",
+        "OVERTIME",
+        "ATTENDANCE_ADJUSTMENT"
+      ]
+    },
+    "status": {
+      "enum": [
+        "DRAFT",
+        "PENDING_APPROVAL",
+        "APPROVED",
+        "REJECTED",
+        "ESCALATED",
+        "CANCELLED"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "start_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "end_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "accrued_leave_days": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "requested_leave_days": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "exclusiveMinimum": 0
+    },
+    "requested_hours": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "exclusiveMinimum": 0
+    },
+    "employee_reason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    },
+    "sensitive_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "medical_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "medical_notes": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "compensation_amount": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "rejection_reason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "\\S"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "ticket_type": {
+            "const": "ANNUAL_LEAVE"
+          }
+        },
+        "required": [
+          "ticket_type"
+        ]
+      },
+      "then": {
+        "required": [
+          "start_date",
+          "end_date",
+          "accrued_leave_days",
+          "requested_leave_days"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "REJECTED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "required": [
+          "rejection_reason"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,334 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectSlug": "hr-time-leave-agent",
+  "entryMode": "capture",
+  "outputTemplate": "madr-v4",
+  "phase": "complete",
+  "frameConfirmedAt": "2026-09-28T17:41:44.9546354+07:00",
+  "decideConfirmedAt": "2026-09-28T17:43:35.9721064+07:00",
+  "governEnteredAt": "2026-09-28T17:43:35.9721064+07:00",
+  "decisionOutcomeConfirmedAt": "2026-09-28T20:11:10.5202031+07:00",
+  "governance": {
+    "autonomyTier": "partial",
+    "targetSystem": null,
+    "adrOwner": "@zerosaber10-dev",
+    "adrId": "0001",
+    "status": "proposed",
+    "handoffBatchApprovedAt": "2026-09-28T22:42:58.5200742+07:00",
+    "completedAt": "2026-09-28T22:42:58.5200742+07:00",
+    "handoffSummaryPath": ".copilot-tracking/adr-plans/hr-time-leave-agent/handoffs/adr-0001-compact-summary.md",
+    "handoffEvents": [
+      {
+        "event": "created",
+        "target": "rpi-plan",
+        "path": ".copilot-tracking/adr-plans/hr-time-leave-agent/handoffs/adr-0001-rpi-planning.md",
+        "reason": "The ADR introduces implementable components, interfaces, infrastructure, and measurable engineering criteria."
+      },
+      {
+        "event": "created",
+        "target": "security-planner",
+        "path": ".copilot-tracking/adr-plans/hr-time-leave-agent/handoffs/adr-0001-security-planner.md",
+        "reason": "The ADR affects identity, authorization, data classification, and MCP/connector trust boundaries."
+      },
+      {
+        "event": "created",
+        "target": "rai-planner",
+        "path": ".copilot-tracking/adr-plans/hr-time-leave-agent/handoffs/adr-0001-rai-planner.md",
+        "reason": "The ADR selects model/retrieval behavior and defines sensitive-data and human-decision constraints."
+      },
+      {
+        "event": "skipped",
+        "target": "ado",
+        "reason": "The user selected no backlog work items."
+      },
+      {
+        "event": "skipped",
+        "target": "github",
+        "reason": "The user selected no backlog work items."
+      }
+    ]
+  },
+  "scope": "Set the reference architecture baseline for the HR Copilot across three explicit sub-decisions: agent orchestration and tool execution; AI model and policy retrieval; and ticket/audit versus conversation-state persistence. The baseline is the user-supplied Azure design, not an implementation or deployment approval.",
+  "drivers": [
+    {
+      "id": "D1",
+      "statement": "Preserve tenant-, role-, ownership-, and direct-report authorization while preventing disclosure of medical and compensation data.",
+      "evidence": "SOP-HR-042 sections 6.1-6.2; PRD NFR-005 through NFR-010"
+    },
+    {
+      "id": "D2",
+      "statement": "Keep human accountability for approvals, explicit ticket lifecycle state, reliable SLA processing, and attributable audit records.",
+      "evidence": "SOP-HR-042 sections 5.2 and 7.2; SPEC-HRIS-014; PRD FR-003 and FR-004"
+    },
+    {
+      "id": "D3",
+      "statement": "Meet the user-facing response-time and service availability targets without losing ticket or SLA events.",
+      "evidence": "PRD NFR-001 through NFR-004"
+    },
+    {
+      "id": "D4",
+      "statement": "Support policy-grounded responses and replaceable HRIS/ERP integration boundaries while controlling Azure model, search, compute, and storage costs.",
+      "evidence": "User-supplied architecture blueprint; PRD NFR-011 and NFR-015; Marketplace Lean Canvas"
+    }
+  ],
+  "constraints": [
+    "The evidence is synthetic workshop material and is not a verified production policy, live tenant configuration, or legal determination.",
+    "Human managers or authorized HR administrators make ticket decisions; the agent must not self-approve, self-reject, or impersonate a user.",
+    "Medical details and compensation-sensitive values must be minimized and withheld from unauthorized roles, Teams cards, model transcripts, and general-purpose logs.",
+    "Every lifecycle action requires an attributable, append-only or tamper-evident audit record.",
+    "The user-supplied baseline includes Teams, Entra ID OBO, Azure App Service with LangGraph and internal MCP, Foundry, Azure AI Search, Storage, separate Cosmos DB stores, HRIS/Graph connectors, Service Bus, and Functions.",
+    "The SLA evidence conflicts: SOP-HR-042 describes a 48-business-hour reminder and escalation after 72 hours, while SPEC-HRIS-014 shows escalation after a 48-hour SLA. Timer semantics must be confirmed before implementation."
+  ],
+  "userPreferences": {
+    "autonomyTier": "partial",
+    "diagramFormat": "mermaid",
+    "targetSystem": null,
+    "outputDetailLevel": "standard",
+    "includeOptionalArtifacts": {
+      "consequencesTable": true,
+      "decisionDrivers": true
+    }
+  },
+  "disclaimerShownAt": "2026-09-28T20:41:21.3449228+07:00",
+  "phaseSkillsLoaded": [
+    "adr-author/SKILL.md#frame",
+    "adr-author/SKILL.md#decide",
+    "adr-author/SKILL.md#govern"
+  ],
+  "inputs": [
+    {
+      "kind": "user-supplied-context",
+      "ref": "Enterprise Adaptive HR and Time Management Copilot architecture blueprint",
+      "capturedAt": "2026-09-28T17:30:59.8149877+07:00"
+    },
+    {
+      "kind": "artifact",
+      "ref": ".copilot-tracking/details/architecture-notes.md",
+      "capturedAt": "2026-09-28T17:30:59.8149877+07:00"
+    },
+    {
+      "kind": "artifact",
+      "ref": ".copilot-tracking/prd-sessions/requirements.md",
+      "capturedAt": "2026-09-28T17:39:32.4440028+07:00"
+    },
+    {
+      "kind": "artifact",
+      "ref": ".copilot-tracking/research/workshop-input/policies/sop-hr-time-and-leave.md",
+      "capturedAt": "2026-09-28T17:39:32.4440028+07:00"
+    },
+    {
+      "kind": "artifact",
+      "ref": ".copilot-tracking/research/workshop-input/sops/ticketing-process-spec.md",
+      "capturedAt": "2026-09-28T17:39:32.4440028+07:00"
+    }
+  ],
+  "decisionMetadata": {
+    "title": "Choose the agentic HR architecture",
+    "suggestedDecision": "LangGraph orchestration with MCP tool execution, Azure AI Foundry, and separated Cosmos DB stores",
+    "deciders": [
+      "Architecture/design authority"
+    ],
+    "consulted": [
+      "Security/privacy",
+      "Platform engineering"
+    ],
+    "informed": [
+      "HR",
+      "Product leadership",
+      "Engineering leadership"
+    ],
+    "configOwner": "@zerosaber10-dev",
+    "selectedOptions": [
+      "LangGraph state machine and MCP tools in Azure App Service",
+      "Azure AI Foundry with hybrid BM25/vector Azure AI Search and semantic reranking",
+      "Separate Cosmos DB stores for ticket/audit data and conversation memory"
+    ],
+    "rejectedOptions": [
+      "Stateless prompt chaining or OpenAI Assistants API",
+      "Proprietary custom REST connector per HRIS",
+      "Dense vector-only search",
+      "Full-context policy window stuffing",
+      "One unified Azure SQL database",
+      "Tickets stored directly as Azure Blob files"
+    ],
+    "alternativesProvenance": "User-reported as evaluated by the architecture group; not independently verified.",
+    "relatedAdrDisposition": "No existing ADRs or ADR directory were found for this project; related ADR list is empty.",
+    "tags": [
+      "architecture",
+      "hr",
+      "agentic-system"
+    ]
+  },
+  "lineage": {
+    "supersedes": [],
+    "supersededBy": null,
+    "relatedTo": []
+  },
+  "asrTriggers": [
+    {
+      "kind": "security",
+      "evidence": "SOP-HR-042 sections 6.1-6.2; PRD NFR-005 through NFR-010",
+      "note": "The architecture determines authentication, authorization, trust boundaries, and handling of confidential medical and compensation data."
+    },
+    {
+      "kind": "compliance",
+      "evidence": "SOP-HR-042 section 7.2; PRD NFR-013",
+      "note": "Internal policy requires attributable lifecycle auditing and constrained handling of sensitive HR information; actual jurisdictional obligations remain unverified."
+    },
+    {
+      "kind": "performance",
+      "evidence": "PRD NFR-001",
+      "note": "The selected orchestration, model, and retrieval path must meet p95 under 3 seconds at nominal load, excluding unavailable external-system waits."
+    },
+    {
+      "kind": "availability",
+      "evidence": "PRD NFR-002 through NFR-004",
+      "note": "The architecture affects monthly availability and timely, duplicate-safe processing of reminder and escalation jobs."
+    }
+  ],
+  "successCriteria": [
+    {
+      "asr": "security",
+      "metric": "Unauthorized access or sensitive-field disclosure in the pre-production security and privacy test suite",
+      "target": "0 successful unauthorized accesses or disclosures",
+      "measurementWindow": "Each release candidate before production",
+      "source": "SOP-HR-042 sections 6.1-6.2; PRD NFR-005 through NFR-010"
+    },
+    {
+      "asr": "compliance",
+      "metric": "Ticket lifecycle events with required actor, action, channel, and state-transition audit data",
+      "target": "100% of lifecycle events",
+      "measurementWindow": "All lifecycle events in the pre-production end-to-end test suite",
+      "source": "SOP-HR-042 section 7.2; PRD NFR-013"
+    },
+    {
+      "asr": "performance",
+      "metric": "User-visible policy and ticket-interaction response latency at p95 under nominal load",
+      "target": "Under 3 seconds, excluding unavailable external-system waits",
+      "measurementWindow": "Nominal-load performance test for each release candidate",
+      "source": "PRD NFR-001"
+    },
+    {
+      "asr": "availability",
+      "metric": "Production service availability",
+      "target": "99.9% monthly, excluding approved maintenance",
+      "measurementWindow": "Monthly production reporting period",
+      "source": "PRD NFR-003"
+    }
+  ],
+  "decisionOptions": [
+    {
+      "axis": "Orchestration and tool execution",
+      "evaluationProvenance": "Alternatives and rejection reasons reported by the user as having been evaluated by the architecture group; not independently verified.",
+      "options": [
+        {
+          "name": "LangGraph state machine and MCP tools in Azure App Service",
+          "disposition": "proposed selection",
+          "pros": [
+            "Supports inspectable ticket workflow state and human pause/resume at manager approval.",
+            "MCP provides a standardized boundary for pluggable HRIS and enterprise tools."
+          ],
+          "cons": [
+            "Requires operating and securing the orchestration service, MCP server, and connector contracts."
+          ]
+        },
+        {
+          "name": "Stateless prompt chaining or OpenAI Assistants API",
+          "disposition": "rejected per user-reported evaluation",
+          "pros": [
+            "Can reduce the amount of custom workflow orchestration for simple conversational tasks."
+          ],
+          "cons": [
+            "Does not provide the required deterministic, inspectable ticket state machine and manager approval pause/resume."
+          ]
+        },
+        {
+          "name": "Proprietary custom REST connector per HRIS",
+          "disposition": "rejected per user-reported evaluation",
+          "pros": [
+            "Can map directly to one selected HRIS API and its vendor-specific operations."
+          ],
+          "cons": [
+            "Tightly couples the agent to vendor-specific APIs and undermines the requested portable connector boundary."
+          ]
+        }
+      ]
+    },
+    {
+      "axis": "Retrieval and models",
+      "evaluationProvenance": "Alternatives and rejection reasons reported by the user as having been evaluated by the architecture group; not independently verified.",
+      "options": [
+        {
+          "name": "Azure AI Foundry with hybrid BM25/vector Azure AI Search and semantic reranking",
+          "disposition": "proposed selection",
+          "pros": [
+            "Combines exact-term and policy-code retrieval with semantic matching and reranking for cited answers."
+          ],
+          "cons": [
+            "Adds index, semantic-ranker, and model cost and requires retrieval-quality and latency evaluation."
+          ]
+        },
+        {
+          "name": "Dense vector-only search",
+          "disposition": "rejected per user-reported evaluation",
+          "pros": [
+            "Provides a simpler semantic retrieval path with fewer retrieval modes to tune."
+          ],
+          "cons": [
+            "Can miss exact numeric values and policy codes or return semantically similar but incorrect clauses."
+          ]
+        },
+        {
+          "name": "Full-context policy window stuffing",
+          "disposition": "rejected per user-reported evaluation",
+          "pros": [
+            "Avoids building and operating a separate retrieval index for smaller policy collections."
+          ],
+          "cons": [
+            "Increases token consumption and latency as the policy library grows, conflicting with the p95 target."
+          ]
+        }
+      ]
+    },
+    {
+      "axis": "Persistence and storage",
+      "evaluationProvenance": "Alternatives and rejection reasons reported by the user as having been evaluated by the architecture group; not independently verified.",
+      "options": [
+        {
+          "name": "Separate Cosmos DB stores for tickets/audit and conversation memory",
+          "disposition": "proposed selection",
+          "pros": [
+            "Creates distinct access, retention, and lifecycle boundaries for workflow records and short-lived conversation state."
+          ],
+          "cons": [
+            "Requires explicit cross-store consistency and recovery design; Cosmos DB alone does not provide immutable audit guarantees."
+          ]
+        },
+        {
+          "name": "One unified Azure SQL database",
+          "disposition": "rejected per user-reported evaluation",
+          "pros": [
+            "Provides relational constraints and transaction support for structured ticket operations."
+          ],
+          "cons": [
+            "The reported design concern is retention and schema coupling between ticket/audit records and conversation memory; separate schemas and tables could mitigate but not remove all governance coupling."
+          ]
+        },
+        {
+          "name": "Tickets stored directly as Azure Blob files",
+          "disposition": "rejected per user-reported evaluation",
+          "pros": [
+            "Provides low-cost durable object storage for documents and archival payloads."
+          ],
+          "cons": [
+            "Is not a suitable sole system of record for transactional updates, concurrency control, and manager-indexed pending-ticket queries."
+          ]
+        }
+      ]
+    }
+  ],
+  "untrustedSources": [],
+  "handoffs": [],
+  "repoVisibility": "public",
+  "lastUpdatedAt": "2026-09-28T22:42:58.5200742+07:00"
+}

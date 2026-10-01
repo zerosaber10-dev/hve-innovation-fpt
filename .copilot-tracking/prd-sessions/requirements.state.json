@@ -1,0 +1,62 @@
+{
+  "prdFile": ".copilot-tracking/prd-sessions/requirements.md",
+  "lastAccessed": "2026-09-25T14:56:00+07:00",
+  "currentPhase": "build",
+  "disclaimerShownAt": "2026-09-25T14:56:00+07:00",
+  "phaseSkillsLoaded": [
+    "prd-author#assess",
+    "prd-author#discover",
+    "prd-author#create",
+    "prd-author#build",
+    "prd-author#integrate"
+  ],
+  "extensionsLoaded": [],
+  "questionsAsked": [
+    "production-hris-contract",
+    "tenant-retention-controls",
+    "regional-policy-variations",
+    "success-metric-baselines"
+  ],
+  "answeredQuestions": {},
+  "referencesProcessed": [
+    {
+      "file": ".copilot-tracking/research/2026-09-24/hr-time-leave-agent-research.md",
+      "status": "analyzed",
+      "keyFindings": "Evidence-bound HR workflow, policy, persona, failure-case, privacy, and architecture context."
+    },
+    {
+      "file": ".copilot-tracking/research/workshop-input/policies/sop-hr-time-and-leave.md",
+      "status": "analyzed",
+      "keyFindings": "SOP-HR-042 working hours, leave, overtime, SLA, RBAC, privacy, and audit rules."
+    },
+    {
+      "file": ".copilot-tracking/research/workshop-input/sops/ticketing-process-spec.md",
+      "status": "analyzed",
+      "keyFindings": "SPEC-HRIS-014 ticket schema, lifecycle states, and escalation flow."
+    },
+    {
+      "file": ".copilot-tracking/research/workshop-input/leancanvas.md",
+      "status": "analyzed",
+      "keyFindings": "Marketplace business framing, value proposition, channels, metrics, and unfair advantage."
+    }
+  ],
+  "nextActions": [
+    "Validate production HRIS and Microsoft Graph contracts",
+    "Confirm tenant privacy, retention, and audit controls",
+    "Establish metric baselines with HR Operations",
+    "Run BRD and PRD quality review before approval"
+  ],
+  "qualityChecks": [
+    "scope-defined",
+    "personas-defined",
+    "functional-requirements-defined",
+    "gherkin-acceptance-criteria-defined",
+    "nfr-targets-defined",
+    "rai-guardrails-defined",
+    "traceability-mapped"
+  ],
+  "userPreferences": {
+    "detail-level": "comprehensive",
+    "question-style": "structured"
+  }
+}

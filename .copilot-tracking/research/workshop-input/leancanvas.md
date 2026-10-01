@@ -1,125 +1,62 @@
-<!-- markdownlint-disable-file -->
+# Enterprise Adaptive HR & Time Management Copilot Agent
+## Marketplace Lean Canvas
 
-# Lean Canvas for Resource Allocation Tool
+### 1) Business Problem / Cost of Inaction
+- Manual time, leave, and attendance requests still flow through paper-heavy or portal-based ticketing, creating delays, inconsistent records, and avoidable rework.
+- Manager approvals often miss the 48-hour SLA, causing escalations, payroll drift, and employee dissatisfaction.
+- HR teams spend excessive time answering repetitive policy questions (leave accruals, blackout windows, overtime rules, sick-leave certification requirements) instead of handling strategic workforce issues.
+- Cost of inaction: slower service, increased HR workload, compliance exposure, and lost productivity for employees and managers.
 
-Status: Draft for human review
+### 2) Target Customer / Decision Maker
+- HR Directors and Chief People Officers
+- HR Operations leaders and HR administrators
+- Line Managers responsible for approving time-off and overtime requests
+- Frontline employees and hourly workers who need fast access to policy guidance and request submissions
+- Multi-business-unit enterprises with distributed teams and local policy variation
 
-## Business problem or pain
-The current staffing process is slow and manual. After a bid is won, the PM creates a project brief and ops code, then collects CVs from relevant BULs or manually curates candidate lists. Those CVs are checked for availability, approval, and fit before the team is confirmed in an internal tool. Only after income is confirmed does the project begin onboarding and kickoff.
+### 3) Unique Value Proposition
+- Zero-friction conversational Q&A for policy and entitlement questions, grounded in authoritative policy citations and enterprise HR rules.
+- Automated time, leave, overtime, and attendance ticket lifecycle from request through approval, escalation, and audit record.
+- Actionable Microsoft 365 Teams approvals that let managers review and decide in context without switching systems.
+- A single employee experience for policy clarity + request execution, reducing confusion and friction.
 
-This causes several business problems:
-- slow staffing decisions
-- too many CVs reviewed before a suitable match is found
-- manual coordination between PMs and BULs
-- over-allocation and double-booking of team members
-- delayed project kickoff and higher operational overhead
+### 4) Solution / Core Offering
+- Multi-tenant AI agent for HR and workforce operations
+- Pluggable HRIS / ERP connectors (Workday, SAP, BambooHR, and similar systems)
+- Real-time policy evaluation against leave balances, blackout windows, overtime rules, and approval thresholds
+- Strict RBAC aligned to employee, manager, and HR admin roles
+- Immutable audit logging for every lifecycle transition, with privacy guardrails for PHI and compensation data
 
-The cost of doing nothing is higher delivery risk, lower utilization, missed project start dates, and avoidable rework.
+### 5) Distribution Channels
+- Microsoft 365 Copilot Agent Store for enterprise discovery and deployment within existing productivity workflows
+- Azure Marketplace Managed App for managed deployment, tenant onboarding, and enterprise procurement
+- Direct enterprise sales through HR technology and workforce transformation partners
+- Internal IT / HR implementation via Microsoft 365 and Azure landing-zone patterns
 
-## Target customer or user
-Target customer:
-- project-driven organizations with multiple concurrent initiatives
-- PMO and delivery teams
-- business unit leaders responsible for resource approvals
+### 6) Revenue Model / Value Capture
+- Per-seat monthly subscription for employee and manager access tiers
+- Enterprise volume pricing based on employee count, regions, and connected HR systems
+- Premium add-on for advanced workflow automation, policy tuning, and audit/compliance reporting
+- Optional managed-service or solution-implementation package for onboarding and connector setup
 
-Primary users:
-- project managers, who own staffing decisions
-- BULs, who confirm capacity and approval
-- resource managers or team leads, who review fit and allocation at operational level
+### 7) Cost Drivers
+- Azure OpenAI token consumption for conversational policy Q&A and smart ticket summarization
+- Azure Container Apps / Azure Functions for orchestration, workflows, and bot integrations
+- Azure database and search/indexing costs for ticket records, policy retrieval, and audit history
+- Integration and connector maintenance across HRIS, ERP, Teams, and notification systems
+- Security, monitoring, and logging for RBAC, operations, and compliance
 
-The primary decision maker is the PM, while BULs serve as the validation authority for capacity and feasibility.
+### 8) Key Metrics
+- Average ticket resolution time from submission to decision
+- Policy query deflection rate (how many employee questions are answered without HR intervention)
+- Manager approval compliance rate within the 48-hour SLA
+- Escalation rate and time-to-escalation for overdue approvals
+- HR admin workload reduction and time saved per case
+- Employee satisfaction with policy clarity and request turnaround
 
-## Unique value proposition
-A resource allocation tool that helps PMs make faster and safer staffing decisions by combining current allocation levels, candidate CV data, and role fit. It does not just show who is available; it identifies strong matches, partial matches, and over-allocation risk before kickoff.
-
-The product makes staffing decisions more transparent, less manual, and less error-prone.
-
-## Solution or core offering
-A decision-support tool for project staffing that:
-- stores candidate profiles and CVs
-- tracks current allocation levels from 0 to 2
-- identifies candidates with 0 = unassigned, 1 = fully allocated, and 2 = doubly allocated
-- recommends people based on role fit and skill match
-- detects partial matches where a person is close but not an ideal fit
-- highlights over-allocation and staffing risk before assignment
-- supports PM-led assignment with BUL confirmation
-
-Minimum viable version:
-- project role requirements
-- candidate pool with skill and role data
-- current allocation state
-- partial-match detection
-- risk flags for over-allocation
-- PM assignment flow with BUL approval
-
-## Distribution or channels
-- roll out first to PMO and operational delivery teams
-- pilot with one or two business units or delivery groups
-- internal adoption through project leadership and resource managers
-- scale from local team allocation to portfolio-level staffing over time
-
-## Revenue model or value capture
-Likely value capture includes:
-- internal productivity platform for staffing operations
-- SaaS or enterprise subscription model for resource management teams
-- implementation and onboarding fees
-- premium features for portfolio planning, forecasting, and workload optimization
-
-## Cost structure
-Major cost drivers:
-- data ingestion and integration with internal staffing systems
-- candidate and skill matching logic
-- UI and workflow development
-- approval and access controls
-- support, training, and rollout management
-
-## Key metrics and success measures
-1. Reduction in time to staff a project
-2. Reduction in the number of CVs processed per position
-3. Reduction in over-allocation and improvement in staffing fit
-
-Supporting indicators:
-- fewer last-minute staffing changes
-- fewer rework cycles before kickoff
-- better first-pass staffing accuracy
-- lower PM and BUL coordination overhead
-
-## Competitive advantage or unfair edge
-The strongest advantage is not simply resource tracking. It is early partial-match detection and capacity-aware staffing intelligence. The tool helps PMs distinguish between:
-- strong fit
-- partial fit
-- capacity risk
-- over-allocation cases
-
-This helps reduce manual review, improve staffing confidence, and avoid double-booking in a way that spreadsheets and email-driven processes do not.
-
-## Facts vs assumptions vs unknowns
-
-### Facts
-- The current process is manual and fragmented across Jira, BUL outreach, CV collection, and internal tools.
-- Current allocation data already exists and is an important signal.
-- PMs and BULs both participate in staffing, but PMs should own the decision while BULs confirm availability.
-- Partial-fit detection is an important use case and should be emphasized.
-
-### Assumptions
-- PMs should own the staffing decision and assignment process.
-- BULs should confirm capacity and feasibility rather than lead the full process.
-- The first release should focus on staffing decisions and risk signals rather than full workforce forecasting.
-- The most valuable business outcome is reducing staffing delays and overload risk.
-
-### Unknowns to resolve
-- What data fields are actually available in the CVs and staffing systems?
-- Are skills and experiences already structured or primarily in free-text CVs?
-- What is the project demand pattern across teams and roles?
-- What approval workflow must be enforced before a team is formally onboarded?
-- What is the minimum viable workflow needed to prove business value?
-
-## Follow-up questions for the project team
-- What exact staffing inputs exist today beyond CVs and allocation levels?
-- Which project roles most often suffer from staffing delays?
-- What level of partial fit is acceptable for a project?
-- Which team should own the final staffing approval workflow?
-- What is the minimum viable feature set for the pilot release?
-
-## One-line summary
-A project staffing platform that helps PMs match the right people to the right work faster, detect partial-fit opportunities earlier, and prevent over-allocation before kickoff.
+### 9) Unfair Advantage
+- Turnkey Microsoft 365 integration with Teams-based approvals and Copilot-native user experience
+- Verified audit trails for every ticket action, decision, and policy check
+- Privacy-preserving RAI guardrails that protect PHI, medical detail, and compensation-sensitive data
+- Enterprise-grade RBAC and policy enforcement aligned to HR process controls
+- Built for real enterprise workflows rather than a standalone chatbot, increasing trust and adoption
