@@ -1,0 +1,71 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "c5b8e962-4217-48f1-a1b7-d1e9e8f62301",
+  "packageName": "com.contoso.hrtimeleave",
+  "developer": {
+    "name": "Contoso Enterprise HR",
+    "websiteUrl": "https://hr-copilot.contoso.com",
+    "privacyUrl": "https://hr-copilot.contoso.com/privacy",
+    "termsOfUseUrl": "https://hr-copilot.contoso.com/terms"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "HR Time & Leave",
+    "full": "Enterprise HR Time and Leave Copilot"
+  },
+  "description": {
+    "short": "HR time, leave, and policy copilot",
+    "full": "Enterprise Adaptive HR and Time Management Copilot provides policy-grounded Q&A, conversational leave and time requests, actionable Teams manager approvals, and SLA tracking with zero sensitive medical or compensation leakage."
+  },
+  "accentColor": "#0078D4",
+  "bots": [
+    {
+      "botId": "00000000-0000-0000-0000-000000000000",
+      "scopes": [
+        "personal",
+        "team",
+        "groupChat"
+      ],
+      "supportsFiles": false,
+      "isNotificationOnly": false,
+      "commandLists": [
+        {
+          "scopes": [
+            "personal"
+          ],
+          "commands": [
+            {
+              "title": "Check Balance",
+              "description": "View accrued annual and sick leave balances"
+            },
+            {
+              "title": "Request Leave",
+              "description": "Submit a new annual, sick, or personal leave request"
+            },
+            {
+              "title": "Policy Question",
+              "description": "Ask questions about company time and leave policy"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "*.azurewebsites.net",
+    "hr-copilot.contoso.com"
+  ],
+  "webApplicationInfo": {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "resource": "api://botid-00000000-0000-0000-0000-000000000000"
+  }
+}

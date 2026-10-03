@@ -36,3 +36,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Antigravity / Agents
+.agents/
+

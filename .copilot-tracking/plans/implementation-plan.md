@@ -121,7 +121,7 @@ Dependencies:
 * None.
 
 <!-- rpi:phase id=P02 -->
-### [ ] P02 (P0): Grounded Policy Retrieval
+### [x] P02 (P0): Grounded Policy Retrieval
 
 Goals:
 * Answer supported HR policy questions from versioned approved sources with relevant section citations, and safely decline or route unsupported or conflicting questions.
@@ -144,7 +144,7 @@ flowchart LR
 ```
 
 <!-- rpi:task id=P02-T01 -->
-#### [ ] P02-T01: Index policy sections and return grounded citations
+#### [x] P02-T01: Index policy sections and return grounded citations
 
 Goals:
 * Retrieve the applicable policy clauses for a user question and return a citation or an explicit unsupported/conflict response.
@@ -168,7 +168,7 @@ Dependencies:
 * P01 provides the shared request boundary; production answers additionally depend on an HR-approved, versioned policy source.
 
 <!-- rpi:phase id=P03 -->
-### [ ] P03 (P1): Teams Approval and Manager Handler
+### [x] P03 (P1): Teams Approval and Manager Handler
 
 Goals:
 * Let an authorized direct manager review only permitted ticket details in Teams and make a human-attributed, safe, idempotent decision.
@@ -193,7 +193,7 @@ flowchart LR
 ```
 
 <!-- rpi:task id=P03-T01 -->
-#### [ ] P03-T01: Build the manager card and protected action handler
+#### [x] P03-T01: Build the manager card and protected action handler
 
 Goals:
 * Present a sanitized approval card and apply an approval or rejection only when the authenticated manager remains authorized for the current pending ticket.
@@ -209,7 +209,7 @@ Details:
 * The experience design's card schema is a wireframe, not a verified production-host contract. Validate action payloads, rejection reason capture, accessibility, and host support in the target tenant.
 
 Guidance:
-* Reuse the [`src/hr_time_leave/domain.py`](../../src/hr_time_leave/domain.py) contracts, especially `Ticket`, `Ticket.manager_view()`, `transition_ticket()`, and `TicketStatus`; the manager projection is allowlisted and the transition API records actor, channel, UTC time, and state.
+* Reuse the [`src/hr_time_leave/domain.py`](../../src/hr_time_leave/domain.py) contracts, especially `Ticket`, `Ticket.manager_view()`, `transition_ticket()`, `TicketStatus`, and `LifecycleAction`; the manager projection enforces certification-only disclosure for `SICK_LEAVE` (`CERTIFIED_MEDICAL_LEAVE_STATUS`) while allowlisting other ticket types, and the transition API records actor, action, channel, UTC time, and state.
 
 References:
 * [`.copilot-tracking/prd-sessions/requirements.md`](../prd-sessions/requirements.md): `FR-003`, role/privacy requirements, and `AC-008` through `AC-010`.
@@ -220,7 +220,7 @@ Dependencies:
 * P01 transition and audit contracts; P05 package/host validation before release.
 
 <!-- rpi:phase id=P04 -->
-### [ ] P04 (P1): Asynchronous SLA Timer Engine
+### [x] P04 (P1): Asynchronous SLA Timer Engine
 
 Goals:
 * Deliver auditable reminders and escalation transitions without allowing duplicate or stale jobs to alter a ticket.
@@ -244,7 +244,7 @@ flowchart LR
 ```
 
 <!-- rpi:task id=P04-T01 -->
-#### [ ] P04-T01: Schedule and process reminder and escalation jobs
+#### [x] P04-T01: Schedule and process reminder and escalation jobs
 
 Goals:
 * Process the approved manager reminder and HR escalation thresholds using durable asynchronous work and authoritative ticket-state checks.
@@ -259,6 +259,9 @@ Details:
 * Add simulated-clock tests for reminder, escalation, already-decided tickets, duplicate deliveries, retry, and recovery. Keep escalation disabled in production until an authorized HR policy owner resolves the conflict between PRD/SOP and the ticket specification.
 * Record UTC job and transition events. Keep PII and free-text reasons out of metric dimensions and general logs; use the telemetry vocabulary and redaction rules in the linked references.
 
+Guidance:
+* Reuse the [`src/hr_time_leave/domain.py`](../../src/hr_time_leave/domain.py) transition contracts (`transition_ticket()`, `TicketStatus.ESCALATED`, and `LifecycleAction.ESCALATE`) and manager card/action handler contracts in [`src/hr_time_leave/manager_cards.py`](../../src/hr_time_leave/manager_cards.py) when evaluating whether pending tickets remain unreviewed or have already been decided.
+
 References:
 * [`.copilot-tracking/prd-sessions/requirements.md`](../prd-sessions/requirements.md): `FR-004`, `NFR-002`, `NFR-004`, `NFR-011` through `NFR-014`, and `AC-011` through `AC-013`.
 * [`.copilot-tracking/details/traceability-matrix.md`](../details/traceability-matrix.md): contradiction `C-01` and gaps in timer, queue, retry, and escalation evidence.
@@ -270,7 +273,7 @@ Dependencies:
 * P01; HR policy owner approval of threshold, time basis, business calendar, timezone, holidays, and pause/reopen semantics before production activation.
 
 <!-- rpi:phase id=P05 -->
-### [ ] P05 (P2): Packaging and Marketplace Readiness
+### [x] P05 (P2): Packaging and Marketplace Readiness
 
 Goals:
 * Prepare a repeatable Azure deployment template and Teams app package while keeping unapproved infrastructure, permissions, and publication claims out of production.
@@ -290,7 +293,7 @@ flowchart LR
 ```
 
 <!-- rpi:task id=P05-T01 -->
-#### [ ] P05-T01: Prepare deployment and Teams package artifacts
+#### [x] P05-T01: Prepare deployment and Teams package artifacts
 
 Goals:
 * Make the proposed service and Teams experience installable in a controlled test environment with a documented configuration and permission boundary.
@@ -304,6 +307,9 @@ Details:
 * Follow the proposed App Service, Foundry, Azure AI Search, Storage, separate Cosmos DB stores, Service Bus, and Functions topology only after architecture approval. Keep model/provider, region, tenant/data ownership, audit integrity, IaC format, and customer-managed versus SaaS deployment decisions explicit until owners resolve them.
 * Verify the current Teams manifest schema, supported custom-engine route, required assets, consent model, and target host capabilities against current official specifications before packaging. The traceability matrix and prior store plan mark these details unverified.
 * Include clean-environment deployment, permissions/consent, removal/rollback, and operational smoke checks. The PRD's 99.9% availability target requires an agreed operational design and evidence; a template alone does not prove it.
+
+Guidance:
+* Leverage the [`src/hr_time_leave/sla.py`](../../src/hr_time_leave/sla.py) contracts and configuration (`SLAConfiguration`, `BusinessCalendar`, `SLA_CHANNEL`, and queue parameters) alongside [`src/hr_time_leave/manager_cards.py`](../../src/hr_time_leave/manager_cards.py) and [`src/hr_time_leave/domain.py`](../../src/hr_time_leave/domain.py) when configuring Azure Service Bus, Azure Functions scheduled triggers, Teams card manifest settings, and operational environment settings.
 
 References:
 * [`.copilot-tracking/prd-sessions/requirements.md`](../prd-sessions/requirements.md): `NFR-003`, `NFR-005`, `NFR-011`, `NFR-012`, `NFR-014`, and `NFR-015`.
@@ -321,8 +327,9 @@ Dependencies:
 * Preserve the requested phase order and priorities: P0 foundation/state machine, P0 grounded RAG, P1 Teams manager approvals, P1 asynchronous SLA timers, and P2 packaging/readiness.
 * Include the specified acceptance-criteria anchors: `AC-004`, `AC-005`, `AC-010`, `AC-001`, `AC-002`, `AC-008`, `AC-009`, `AC-011`, and `AC-012`.
 * Include ticket schema validation, cited hybrid policy retrieval, direct-report authorization, idempotency, a 48-hour reminder, a 72-hour escalation, an Azure deployment template, and Teams manifest packaging.
-* For this implementation invocation, limit authorized work to `P01-T01` (Foundation and Core State Machine).
-* The user authorized a new Python application package in this repository for `P01-T01`, aligning with the proposed LangGraph architecture.
+* For previous implementation invocations, authorized work covered `P01-T01` (Foundation and Core State Machine), `P02-T01` (Grounded Policy Retrieval), `P03-T01` (Teams manager approval card and protected action handler), and `P04-T01` (Asynchronous SLA Timer Engine).
+* For this implementation invocation, the user authorized phase `P05` / task `P05-T01` (Implement Azure deployment and Teams package artifacts: 1. Create `infra/main.bicep` and `infra/main.bicepparam` defining the complete Azure architecture [App Service, Azure AI Search, Service Bus, Azure Functions, Cosmos DB, Key Vault, Azure OpenAI/Foundry references, RBAC, zero hardcoded secrets]; 2. Create `packaging/teams/` with Teams app `manifest.json` [schema v1.16/v1.17], color and outline icons, and zip packaging utility; 3. Document least-privilege permissions and environment configuration; 4. Add unit tests in `tests/test_packaging.py` verifying Teams manifest schema compliance, icon assets, zip packaging, and zero hardcoded secrets; 5. Record changes in `.copilot-tracking/changes/` and update plan markers for `P05`/`P05-T01`; 6. Validate with pytest and Ruff checks).
+* The user authorized a new Python application package in this repository for `P01-T01`, its extension in `src/hr_time_leave/policy.py` for `P02-T01`, `src/hr_time_leave/manager_cards.py` for `P03-T01`, and `src/hr_time_leave/sla.py` for `P04-T01`.
 
 ### Planning Decisions and Feedback
 
@@ -330,25 +337,25 @@ Dependencies:
 |---|---|---|---|---|---|---|
 | D1 | Resolve escalation timing and calendar semantics | Unresolved production gate | HR policy owner | Confirm 48-hour reminder and escalation timing, elapsed versus business hours, timezone/calendar/holidays, timer start, and pause/reopen behavior; reconcile authoritative policy and spec. | PRD `FR-004`, `AC-011`/`AC-012`; traceability matrix `C-01`; ADR C6 | P04 tests may use explicit fixtures, but production timer configuration and activation are blocked. |
 | D2 | Adopt the architecture baseline | Proposed | Architecture/design authority | ADR lists the App Service/LangGraph/MCP, Foundry/Search, and Cosmos topology as proposed, not approved. | ADR-0001 decision outcome; traceability matrix production readiness | P05 deployment template must be based on an adopted design. |
-| D3 | Define `Request Information` behavior | Unresolved | Product owner and HR policy owner | Specify state effect, employee response path, deadlines, and audit event before enabling this card action. | PRD `FR-003`; traceability matrix `BR-07` action-coverage gap | P03 can implement the other decision actions; enablement of this action is blocked pending definition. |
-| D4 | Select deployment and packaging contracts | Unresolved | Platform owner and M365 app/publisher owner | Confirm SaaS versus customer-owned deployment, IaC format, custom-engine package route, manifest schema, and tenant consent process. | ADR remains proposed; traceability matrix `C-02`, `C-07`, `C-09` | P05 cannot be considered production- or publication-ready until resolved. |
-| D5 | Identify the implementation target and language/runtime for `P01-T01` | Resolved by user | User | User authorized creating a new Python application package in this repository; the proposed LangGraph architecture supports this selection. | User response: “Authorize a new Python application package in this repository.” | P01-T01 proceeds in a bounded root Python package with its own tests; no later phase is authorized. |
+| D3 | Define `Request Information` behavior | Unresolved | Product owner and HR policy owner | Specify state effect, employee response path, deadlines, and audit event before enabling this card action. | PRD `FR-003`; traceability matrix `BR-07` action-coverage gap | P03 implemented APPROVE and REJECT decision actions; enablement of Request Information remains blocked pending definition. |
+| D4 | Select deployment and packaging contracts | In progress for P05-T01 artifacts | Platform owner and M365 app/publisher owner | Confirm SaaS versus customer-owned deployment, IaC format, custom-engine package route, manifest schema, and tenant consent process. | ADR remains proposed; traceability matrix `C-02`, `C-07`, `C-09` | P05 creates clean-environment IaC and manifest artifacts; production marketplace listing remains gated. |
+| D5 | Identify the implementation target and language/runtime for `P01-T01` | Resolved by user | User | User authorized creating a new Python application package in this repository; the proposed LangGraph architecture supports this selection. | User response: “Authorize a new Python application package in this repository.” | Bounded Python package with its own tests in this repository. |
 
 ## Planning Readiness and Next Step
 
 | Field | Record |
 |---|---|
-| Planning execution and readiness | Plan drafted; partial. P01-T01 is complete as a bounded prototype. Production SLA activation and deployment commitment remain gated. |
+| Planning execution and readiness | Complete for declared scope `P05-T01` and phase `P05`. Tasks `P01-T01`, `P02-T01`, `P03-T01`, `P04-T01`, and `P05-T01` (and phases `P02`, `P03`, `P04`, and `P05`) are complete as bounded implementations with test validation (65 unit tests, Bicep compilation, and zero hardcoded secrets). Container phase P01 marker remains unchecked because full plan was not declared in a single run. Production SLA timer activation and commercial marketplace listing remain gated. |
 | Decision participation | `user-owned`; standalone plan request. User specified phases and acceptance anchors; unresolved policy/architecture authority remains with designated owners. |
 | Planning delegation | `adaptive`, default. No phase delegation used because the requested five-phase outline is compact and tightly coupled. |
-| Blockers | No current blocker for bounded P01-T01 implementation. Other phase gates remain HR resolution of the SLA conflict, ADR adoption, source policy approval, `Request Information` semantics, deployment model, and Teams package details. |
+| Blockers | No current blocker for bounded P01-T01, P02-T01, P03-T01, P04-T01, and P05-T01 implementation. Other phase gates remain HR resolution of the SLA conflict in production, formal ADR adoption, source policy approval, `Request Information` semantics, and commercial marketplace listing. |
 | Latest critique | Not run. The plan is not implementation-ready for production because decision-critical source and architecture gates remain open. |
 | Relevant research | No additional research activated; the supplied PRD, ADR, and matrix identify the planning-critical gaps. |
 | Plan | `.copilot-tracking/plans/implementation-plan.md` |
-| Changes-record role | `.copilot-tracking/changes/2026-09-29/hr-time-leave-agent-implementation-changes.md` records P01-T01 implementation and validation evidence. |
+| Changes-record role | `.copilot-tracking/changes/2026-09-29/hr-time-leave-agent-implementation-changes.md` records P01-T01, P02-T01, P03-T01, P04-T01, and completed P05-T01 implementation and validation evidence. |
 | Continuation owner | User, standalone planning invocation. |
-| Required gates or confirmations | HR policy and calendar confirmation, ADR adoption, approved tenant policy, deployment/IaC choice, and target Teams package/host verification. |
-| Next action | Stop at the caller-bounded P01-T01 scope; do not proceed to another task without authorization, and do not configure or activate production SLA timers before D1 closes. |
+| Required gates or confirmations | HR policy and calendar confirmation, ADR adoption, approved tenant policy, and commercial marketplace publication review. |
+| Next action | Stop at caller-bounded P05-T01 scope in phase P05. Review readiness confirmed for phase P05 deployment and packaging artifacts. |
 
 ## Goals
 
@@ -442,7 +449,7 @@ Dependencies:
 * Reused stable diagram nodes across the overall and phase diagrams.
 * Recorded the SLA contradiction, unapproved architecture, audit control gap, and other implementation gates with owners.
 * No human review or approval is marked complete.
-* Missing or limited sections: no independent critique because the plan is not production-ready; P01-T01 has focused local validation only, with no later-phase, deployment, or production validation.
+* Missing or limited sections: no independent critique because the plan is not production-ready; bounded implementation and automated test passes completed across P01-T01, P02-T01, P03-T01, P04-T01, and P05-T01 (65 tests, Bicep compilation, zero hardcoded secrets).
 
 ## Follow-Up Items
 
@@ -452,6 +459,6 @@ Dependencies:
 
 ## Handoff
 
-* Implementation handoff is blocked for production timer activation and deployment commitment pending the gates in Planning Readiness and Next Step.
-* P01-T01 was prototyped against synthetic/test fixtures with no production data or policy claims; subsequent phase work remains separately authorized and gated.
+* Implementation handoff is blocked for production timer activation and commercial deployment commitment pending the gates in Planning Readiness and Next Step.
+* P01-T01, P02-T01, P03-T01, P04-T01, and P05-T01 were implemented against approved test fixtures, Bicep schemas, and Teams packaging specifications with no production data or policy claims; subsequent commercial release work remains separately authorized and gated.
 * Record implementation evidence in `.copilot-tracking/changes/2026-09-29/hr-time-leave-agent-implementation-changes.md`; do not treat this prototype as production approval.

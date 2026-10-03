@@ -7,7 +7,9 @@ from decimal import Decimal
 import pytest
 
 from hr_time_leave.domain import (
+    CERTIFIED_MEDICAL_LEAVE_STATUS,
     InvalidTransitionError,
+    LifecycleAction,
     SensitiveTicketData,
     Ticket,
     TicketRuleViolation,
@@ -53,6 +55,7 @@ def test_given_valid_annual_leave_when_submitted_then_pending_approval(
 
     # Assert
     assert submitted_ticket.status is TicketStatus.PENDING_APPROVAL
+    assert submitted_ticket.audit_events[-1].action is LifecycleAction.SUBMIT
     assert submitted_ticket.audit_events[-1].previous_status is TicketStatus.DRAFT
     assert submitted_ticket.audit_events[-1].new_status is TicketStatus.PENDING_APPROVAL
 
@@ -123,6 +126,7 @@ def test_given_rejection_with_reason_when_transitioned_then_rejected(
     # Assert
     assert rejected_ticket.status is TicketStatus.REJECTED
     assert rejected_ticket.rejection_reason == "Dates conflict with team coverage."
+    assert rejected_ticket.audit_events[-1].action is LifecycleAction.REJECT
     assert rejected_ticket.audit_events[-1].rejection_reason == (
         "Dates conflict with team coverage."
     )
@@ -152,6 +156,57 @@ def test_given_sensitive_ticket_fields_when_projected_for_manager_then_omitted(
     assert "1250.50" not in repr(projection)
     assert "sensitive_data" not in projection
     assert "employee_reason" not in projection
+    assert projection["certification_status"] is None
+
+
+def test_given_sick_leave_when_projected_for_manager_then_certified_only() -> None:
+    # Arrange
+    sick_leave_ticket = Ticket(
+        ticket_id="ticket-sick-001",
+        employee_id="employee-002",
+        manager_id="manager-001",
+        ticket_type=TicketType.SICK_LEAVE,
+        created_at=datetime(2026, 9, 29, 8, 0, tzinfo=UTC),
+        status=TicketStatus.PENDING_APPROVAL,
+        start_date=date(2026, 10, 1),
+        end_date=date(2026, 10, 3),
+        requested_leave_days=Decimal("3"),
+        requested_hours=Decimal("24"),
+        employee_reason="Severe migraine and clinical treatment",
+        sensitive_data=SensitiveTicketData(
+            medical_reason="Neurological migraine diagnosis",
+            medical_notes="Physician certificate uploaded",
+            compensation_amount=None,
+        ),
+    )
+
+    # Act
+    view = sick_leave_ticket.manager_view()
+    projection = asdict(view)
+
+    # Assert - certification-only status is present
+    assert view.certification_status == CERTIFIED_MEDICAL_LEAVE_STATUS
+    assert projection["certification_status"] == (
+        "Certified Medical Leave Approved by HR"
+    )
+
+    # Assert - request timing and quantity details are redacted
+    assert view.start_date is None
+    assert view.end_date is None
+    assert view.requested_leave_days is None
+    assert view.requested_hours is None
+
+    # Assert - sensitive medical and employee details are not leaked
+    assert "Neurological migraine diagnosis" not in repr(projection)
+    assert "Physician certificate uploaded" not in repr(projection)
+    assert "Severe migraine and clinical treatment" not in repr(projection)
+    assert "sensitive_data" not in projection
+    assert "employee_reason" not in projection
+
+    # Assert - non-sensitive core ticket metadata remains accessible
+    assert view.ticket_id == "ticket-sick-001"
+    assert view.ticket_type is TicketType.SICK_LEAVE
+    assert view.status is TicketStatus.PENDING_APPROVAL
 
 
 def test_given_unknown_ticket_property_when_schema_validated_then_rejected(
@@ -183,6 +238,7 @@ def test_given_approved_ticket_when_transitioned_again_then_rejected(
         channel="teams",
         occurred_at=datetime(2026, 9, 29, 2, 0, tzinfo=UTC),
     )
+    assert approved_ticket.audit_events[-1].action is LifecycleAction.APPROVE
 
     # Act and Assert
     with pytest.raises(InvalidTransitionError, match="APPROVED to REJECTED"):
@@ -194,3 +250,41 @@ def test_given_approved_ticket_when_transitioned_again_then_rejected(
             occurred_at=datetime(2026, 9, 29, 2, 1, tzinfo=UTC),
             rejection_reason="A later decision is not allowed.",
         )
+
+
+def test_given_pending_ticket_when_escalated_and_cancelled_then_actions_recorded(
+    annual_leave_draft: Ticket,
+) -> None:
+    # Arrange
+    pending_ticket = submit_ticket(
+        annual_leave_draft,
+        actor_id="employee-001",
+        channel="teams",
+        occurred_at=datetime(2026, 9, 29, 1, 5, tzinfo=UTC),
+    )
+
+    # Act - escalate
+    escalated_ticket = transition_ticket(
+        pending_ticket,
+        TicketStatus.ESCALATED,
+        actor_id="system-sla",
+        channel="service_bus",
+        occurred_at=datetime(2026, 9, 29, 3, 0, tzinfo=UTC),
+    )
+
+    # Assert escalate
+    assert escalated_ticket.status is TicketStatus.ESCALATED
+    assert escalated_ticket.audit_events[-1].action is LifecycleAction.ESCALATE
+
+    # Act - cancel
+    cancelled_ticket = transition_ticket(
+        escalated_ticket,
+        TicketStatus.CANCELLED,
+        actor_id="employee-001",
+        channel="teams",
+        occurred_at=datetime(2026, 9, 29, 4, 0, tzinfo=UTC),
+    )
+
+    # Assert cancel
+    assert cancelled_ticket.status is TicketStatus.CANCELLED
+    assert cancelled_ticket.audit_events[-1].action is LifecycleAction.CANCEL

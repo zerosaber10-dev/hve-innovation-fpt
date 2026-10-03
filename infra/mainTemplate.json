@@ -1,0 +1,886 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.47.16.16243",
+      "templateHash": "17266688479178183677"
+    }
+  },
+  "parameters": {
+    "environmentName": {
+      "type": "string",
+      "defaultValue": "dev",
+      "allowedValues": [
+        "dev",
+        "test",
+        "prod"
+      ],
+      "metadata": {
+        "description": "The deployment environment name (dev, test, prod)."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region for all provisioned resources."
+      }
+    },
+    "appNamePrefix": {
+      "type": "string",
+      "defaultValue": "hr-time-leave",
+      "minLength": 3,
+      "maxLength": 16,
+      "metadata": {
+        "description": "Resource prefix used for standardized naming."
+      }
+    },
+    "entraTenantId": {
+      "type": "string",
+      "defaultValue": "[tenant().tenantId]",
+      "metadata": {
+        "description": "Microsoft Entra ID tenant ID for authentication."
+      }
+    },
+    "botAppId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Application / Client ID for the Microsoft Teams Bot registration."
+      }
+    },
+    "appServicePlanSku": {
+      "type": "string",
+      "defaultValue": "B1",
+      "metadata": {
+        "description": "SKU name for App Service Plan."
+      }
+    },
+    "searchSku": {
+      "type": "string",
+      "defaultValue": "standard",
+      "allowedValues": [
+        "basic",
+        "standard"
+      ],
+      "metadata": {
+        "description": "SKU name for Azure AI Search service."
+      }
+    },
+    "existingOpenAiEndpoint": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Azure OpenAI / Foundry endpoint. If empty, a Cognitive Services OpenAI account is provisioned."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "Project": "Enterprise HR Time and Leave Copilot",
+        "Environment": "[parameters('environmentName')]",
+        "ManagedBy": "Bicep",
+        "SecurityProfile": "LeastPrivilege-ZeroSecrets"
+      },
+      "metadata": {
+        "description": "Tags to apply to all resources."
+      }
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[uniqueString(resourceGroup().id)]",
+    "cleanPrefix": "[toLower(replace(parameters('appNamePrefix'), '-', ''))]",
+    "names": {
+      "logAnalytics": "[format('{0}-{1}-log-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix'))]",
+      "appInsights": "[format('{0}-{1}-appi-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix'))]",
+      "storageAccount": "[take(format('{0}{1}st{2}', variables('cleanPrefix'), parameters('environmentName'), variables('uniqueSuffix')), 24)]",
+      "keyVault": "[take(format('{0}-{1}-kv-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix')), 24)]",
+      "cosmosAccount": "[format('{0}-{1}-cosmos-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix'))]",
+      "searchService": "[format('{0}-{1}-search-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix'))]",
+      "serviceBusNamespace": "[format('{0}-{1}-sb-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix'))]",
+      "appServicePlan": "[format('{0}-{1}-asp-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix'))]",
+      "appService": "[format('{0}-{1}-app-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix'))]",
+      "functionApp": "[format('{0}-{1}-func-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix'))]",
+      "cognitiveService": "[format('{0}-{1}-ai-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix'))]",
+      "botService": "[format('{0}-{1}-bot-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix'))]"
+    },
+    "roleDefinitionIds": {
+      "keyVaultSecretsUser": "4633458b-17de-408a-b874-0445c86b69e6",
+      "serviceBusDataSender": "69a216fc-b8fb-44d8-bc22-f94f7c3b9d50",
+      "serviceBusDataReceiver": "4f6d3a01-b295-46f1-a042-a3c6130c67b3",
+      "searchIndexDataContributor": "8ebe5a5f-32e7-4f83-8015-3ea22f308c37",
+      "searchServiceContributor": "7ca78c08-252a-4471-8641-05f40b2244eb",
+      "cognitiveServicesOpenAiUser": "5e070246-6308-41f1-a775-92a59d4f2d70",
+      "storageBlobDataReader": "2a2b9908-6ea1-4836-8bb7-5265d162ba8e",
+      "storageBlobDataOwner": "b7e6dc6d-f1e8-4753-8033-08440cdcdd80"
+    },
+    "cosmosDataContributorRoleId": "00000000-0000-0000-0000-000000000002",
+    "openAiResolvedEndpoint": "[if(empty(parameters('existingOpenAiEndpoint')), format('https://{0}.cognitiveservices.azure.com/', toLower(variables('names').cognitiveService)), parameters('existingOpenAiEndpoint'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('names').logAnalytics]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 90,
+        "features": {
+          "enableLogAccessUsingOnlyResourcePermissions": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[variables('names').appInsights]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('names').logAnalytics)]",
+        "RetentionInDays": 90,
+        "DisableLocalAuth": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('names').logAnalytics)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('names').storageAccount]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true,
+        "allowBlobPublicAccess": false,
+        "allowSharedKeyAccess": false,
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "defaultAction": "Allow"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}', variables('names').storageAccount, 'default')]",
+      "properties": {
+        "deleteRetentionPolicy": {
+          "enabled": true,
+          "days": 30
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('names').storageAccount)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}/{2}', variables('names').storageAccount, 'default', 'policy-documents')]",
+      "properties": {
+        "publicAccess": "None"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices', variables('names').storageAccount, 'default')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}/{2}', variables('names').storageAccount, 'default', 'functions-deployment')]",
+      "properties": {
+        "publicAccess": "None"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices', variables('names').storageAccount, 'default')]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2023-07-01",
+      "name": "[variables('names').keyVault]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "sku": {
+          "family": "A",
+          "name": "standard"
+        },
+        "tenantId": "[parameters('entraTenantId')]",
+        "enableRbacAuthorization": true,
+        "enableSoftDelete": true,
+        "softDeleteRetentionInDays": 90,
+        "enablePurgeProtection": true,
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "defaultAction": "Allow"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2024-05-15",
+      "name": "[variables('names').cosmosAccount]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "GlobalDocumentDB",
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "disableKeyBasedMetadataWriteAccess": true,
+        "disableLocalAuth": false,
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session"
+        },
+        "locations": [
+          {
+            "locationName": "[parameters('location')]",
+            "failoverPriority": 0,
+            "isZoneRedundant": false
+          }
+        ],
+        "capabilities": [
+          {
+            "name": "EnableServerless"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+      "apiVersion": "2024-05-15",
+      "name": "[format('{0}/{1}', variables('names').cosmosAccount, 'hr-ticket-store')]",
+      "properties": {
+        "resource": {
+          "id": "hr-ticket-store"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount)]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2024-05-15",
+      "name": "[format('{0}/{1}/{2}', variables('names').cosmosAccount, 'hr-ticket-store', 'tickets')]",
+      "properties": {
+        "resource": {
+          "id": "tickets",
+          "partitionKey": {
+            "paths": [
+              "/ticket_id"
+            ],
+            "kind": "Hash"
+          },
+          "indexingPolicy": {
+            "indexingMode": "consistent",
+            "includedPaths": [
+              {
+                "path": "/*"
+              }
+            ],
+            "excludedPaths": [
+              {
+                "path": "/medical_notes/*"
+              },
+              {
+                "path": "/medical_reason/*"
+              },
+              {
+                "path": "/overtime_calculation_details/*"
+              }
+            ]
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', variables('names').cosmosAccount, 'hr-ticket-store')]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+      "apiVersion": "2024-05-15",
+      "name": "[format('{0}/{1}', variables('names').cosmosAccount, 'hr-conversation-memory')]",
+      "properties": {
+        "resource": {
+          "id": "hr-conversation-memory"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount)]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2024-05-15",
+      "name": "[format('{0}/{1}/{2}', variables('names').cosmosAccount, 'hr-conversation-memory', 'sessions')]",
+      "properties": {
+        "resource": {
+          "id": "sessions",
+          "partitionKey": {
+            "paths": [
+              "/user_id"
+            ],
+            "kind": "Hash"
+          },
+          "defaultTtl": 2592000
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', variables('names').cosmosAccount, 'hr-conversation-memory')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Search/searchServices",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('names').searchService]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "[parameters('searchSku')]"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "replicaCount": 1,
+        "partitionCount": 1,
+        "hostingMode": "default",
+        "semanticSearch": "free",
+        "authOptions": {
+          "aadOrApiKey": {
+            "aadAuthFailureMode": "http401WithBearerChallenge"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.ServiceBus/namespaces",
+      "apiVersion": "2022-10-01-preview",
+      "name": "[variables('names').serviceBusNamespace]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "Standard",
+        "tier": "Standard"
+      },
+      "properties": {
+        "minimumTlsVersion": "1.2",
+        "disableLocalAuth": true
+      }
+    },
+    {
+      "type": "Microsoft.ServiceBus/namespaces/queues",
+      "apiVersion": "2022-10-01-preview",
+      "name": "[format('{0}/{1}', variables('names').serviceBusNamespace, 'hr-sla-jobs')]",
+      "properties": {
+        "requiresDuplicateDetection": true,
+        "duplicateDetectionHistoryTimeWindow": "PT10M",
+        "deadLetteringOnMessageExpiration": true,
+        "maxDeliveryCount": 5,
+        "defaultMessageTimeToLive": "P14D",
+        "enableBatchedOperations": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', variables('names').serviceBusNamespace)]"
+      ]
+    },
+    {
+      "condition": "[empty(parameters('existingOpenAiEndpoint'))]",
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2024-10-01",
+      "name": "[variables('names').cognitiveService]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "AIServices",
+      "sku": {
+        "name": "S0"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "customSubDomainName": "[toLower(variables('names').cognitiveService)]",
+        "publicNetworkAccess": "Enabled",
+        "disableLocalAuth": true
+      }
+    },
+    {
+      "condition": "[empty(parameters('existingOpenAiEndpoint'))]",
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2024-10-01",
+      "name": "[format('{0}/{1}', variables('names').cognitiveService, 'gpt-4o')]",
+      "sku": {
+        "name": "Standard",
+        "capacity": 20
+      },
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "gpt-4o",
+          "version": "2024-08-06"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('names').cognitiveService)]"
+      ]
+    },
+    {
+      "condition": "[empty(parameters('existingOpenAiEndpoint'))]",
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2024-10-01",
+      "name": "[format('{0}/{1}', variables('names').cognitiveService, 'text-embedding-3-small')]",
+      "sku": {
+        "name": "Standard",
+        "capacity": 20
+      },
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "text-embedding-3-small",
+          "version": "1"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('names').cognitiveService)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('names').appServicePlan]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "[parameters('appServicePlanSku')]"
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('names').appService]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "app,linux",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('names').appServicePlan)]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "linuxFxVersion": "PYTHON|3.11",
+          "alwaysOn": "[and(not(equals(parameters('appServicePlanSku'), 'F1')), not(equals(parameters('appServicePlanSku'), 'D1')))]",
+          "ftpsState": "Disabled",
+          "minTlsVersion": "1.2",
+          "appSettings": [
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('names').appInsights), '2020-02-02').ConnectionString]"
+            },
+            {
+              "name": "AZURE_CLIENT_ID",
+              "value": ""
+            },
+            {
+              "name": "AZURE_TENANT_ID",
+              "value": "[parameters('entraTenantId')]"
+            },
+            {
+              "name": "COSMOS_DB_ENDPOINT",
+              "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount), '2024-05-15').documentEndpoint]"
+            },
+            {
+              "name": "COSMOS_TICKET_DATABASE",
+              "value": "hr-ticket-store"
+            },
+            {
+              "name": "COSMOS_MEMORY_DATABASE",
+              "value": "hr-conversation-memory"
+            },
+            {
+              "name": "AI_SEARCH_ENDPOINT",
+              "value": "[format('https://{0}.search.windows.net', variables('names').searchService)]"
+            },
+            {
+              "name": "SERVICE_BUS_NAMESPACE",
+              "value": "[format('{0}.servicebus.windows.net', variables('names').serviceBusNamespace)]"
+            },
+            {
+              "name": "SERVICE_BUS_QUEUE",
+              "value": "hr-sla-jobs"
+            },
+            {
+              "name": "KEY_VAULT_URI",
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('names').keyVault), '2023-07-01').vaultUri]"
+            },
+            {
+              "name": "OPENAI_ENDPOINT",
+              "value": "[variables('openAiResolvedEndpoint')]"
+            },
+            {
+              "name": "STORAGE_ACCOUNT_BLOB_URL",
+              "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', variables('names').storageAccount), '2023-05-01').primaryEndpoints.blob]"
+            },
+            {
+              "name": "BOT_APP_ID",
+              "value": "[parameters('botAppId')]"
+            },
+            {
+              "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', variables('names').appInsights)]",
+        "[resourceId('Microsoft.Web/serverfarms', variables('names').appServicePlan)]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount)]",
+        "[resourceId('Microsoft.KeyVault/vaults', variables('names').keyVault)]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', variables('names').cosmosAccount, 'hr-conversation-memory')]",
+        "[resourceId('Microsoft.Search/searchServices', variables('names').searchService)]",
+        "[resourceId('Microsoft.ServiceBus/namespaces', variables('names').serviceBusNamespace)]",
+        "[resourceId('Microsoft.ServiceBus/namespaces/queues', variables('names').serviceBusNamespace, 'hr-sla-jobs')]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('names').storageAccount)]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', variables('names').cosmosAccount, 'hr-ticket-store')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('names').functionApp]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "functionapp,linux",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('names').appServicePlan)]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "linuxFxVersion": "PYTHON|3.11",
+          "alwaysOn": "[and(not(equals(parameters('appServicePlanSku'), 'F1')), not(equals(parameters('appServicePlanSku'), 'D1')))]",
+          "ftpsState": "Disabled",
+          "minTlsVersion": "1.2",
+          "appSettings": [
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('names').appInsights), '2020-02-02').ConnectionString]"
+            },
+            {
+              "name": "AzureWebJobsStorage__accountName",
+              "value": "[variables('names').storageAccount]"
+            },
+            {
+              "name": "SERVICE_BUS_CONNECTION__fullyQualifiedNamespace",
+              "value": "[format('{0}.servicebus.windows.net', variables('names').serviceBusNamespace)]"
+            },
+            {
+              "name": "COSMOS_DB_ENDPOINT",
+              "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount), '2024-05-15').documentEndpoint]"
+            },
+            {
+              "name": "COSMOS_TICKET_DATABASE",
+              "value": "hr-ticket-store"
+            },
+            {
+              "name": "KEY_VAULT_URI",
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('names').keyVault), '2023-07-01').vaultUri]"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~4"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "python"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', variables('names').appInsights)]",
+        "[resourceId('Microsoft.Web/serverfarms', variables('names').appServicePlan)]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount)]",
+        "[resourceId('Microsoft.KeyVault/vaults', variables('names').keyVault)]",
+        "[resourceId('Microsoft.ServiceBus/namespaces', variables('names').serviceBusNamespace)]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('names').storageAccount)]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', variables('names').cosmosAccount, 'hr-ticket-store')]"
+      ]
+    },
+    {
+      "condition": "[not(empty(parameters('botAppId')))]",
+      "type": "Microsoft.BotService/botServices",
+      "apiVersion": "2022-09-15",
+      "name": "[variables('names').botService]",
+      "location": "global",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "F0"
+      },
+      "kind": "azurebot",
+      "properties": {
+        "displayName": "Enterprise HR Time and Leave Copilot",
+        "endpoint": "[format('https://{0}/api/messages', reference(resourceId('Microsoft.Web/sites', variables('names').appService), '2023-12-01').defaultHostName)]",
+        "msaAppId": "[parameters('botAppId')]",
+        "msaAppType": "SingleTenant",
+        "msaAppTenantId": "[parameters('entraTenantId')]",
+        "disableLocalAuth": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('names').appService)]"
+      ]
+    },
+    {
+      "condition": "[not(empty(parameters('botAppId')))]",
+      "type": "Microsoft.BotService/botServices/channels",
+      "apiVersion": "2022-09-15",
+      "name": "[format('{0}/{1}', variables('names').botService, 'MsTeamsChannel')]",
+      "location": "global",
+      "properties": {
+        "channelName": "MsTeamsChannel",
+        "properties": {
+          "isEnabled": true
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.BotService/botServices', variables('names').botService)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('names').keyVault)]",
+      "name": "[guid(resourceId('Microsoft.KeyVault/vaults', variables('names').keyVault), resourceId('Microsoft.Web/sites', variables('names').appService), variables('roleDefinitionIds').keyVaultSecretsUser)]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitionIds').keyVaultSecretsUser)]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('names').appService), '2023-12-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('names').appService)]",
+        "[resourceId('Microsoft.KeyVault/vaults', variables('names').keyVault)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('names').keyVault)]",
+      "name": "[guid(resourceId('Microsoft.KeyVault/vaults', variables('names').keyVault), resourceId('Microsoft.Web/sites', variables('names').functionApp), variables('roleDefinitionIds').keyVaultSecretsUser)]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitionIds').keyVaultSecretsUser)]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('names').functionApp), '2023-12-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('names').functionApp)]",
+        "[resourceId('Microsoft.KeyVault/vaults', variables('names').keyVault)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.ServiceBus/namespaces', variables('names').serviceBusNamespace)]",
+      "name": "[guid(resourceId('Microsoft.ServiceBus/namespaces', variables('names').serviceBusNamespace), resourceId('Microsoft.Web/sites', variables('names').appService), variables('roleDefinitionIds').serviceBusDataSender)]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitionIds').serviceBusDataSender)]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('names').appService), '2023-12-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('names').appService)]",
+        "[resourceId('Microsoft.ServiceBus/namespaces', variables('names').serviceBusNamespace)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.ServiceBus/namespaces', variables('names').serviceBusNamespace)]",
+      "name": "[guid(resourceId('Microsoft.ServiceBus/namespaces', variables('names').serviceBusNamespace), resourceId('Microsoft.Web/sites', variables('names').functionApp), variables('roleDefinitionIds').serviceBusDataReceiver)]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitionIds').serviceBusDataReceiver)]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('names').functionApp), '2023-12-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('names').functionApp)]",
+        "[resourceId('Microsoft.ServiceBus/namespaces', variables('names').serviceBusNamespace)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Search/searchServices', variables('names').searchService)]",
+      "name": "[guid(resourceId('Microsoft.Search/searchServices', variables('names').searchService), resourceId('Microsoft.Web/sites', variables('names').appService), variables('roleDefinitionIds').searchIndexDataContributor)]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitionIds').searchIndexDataContributor)]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('names').appService), '2023-12-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('names').appService)]",
+        "[resourceId('Microsoft.Search/searchServices', variables('names').searchService)]"
+      ]
+    },
+    {
+      "condition": "[empty(parameters('existingOpenAiEndpoint'))]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.CognitiveServices/accounts', variables('names').cognitiveService)]",
+      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', variables('names').cognitiveService), resourceId('Microsoft.Web/sites', variables('names').appService), variables('roleDefinitionIds').cognitiveServicesOpenAiUser)]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitionIds').cognitiveServicesOpenAiUser)]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('names').appService), '2023-12-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('names').appService)]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('names').cognitiveService)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', variables('names').storageAccount)]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('names').storageAccount), resourceId('Microsoft.Web/sites', variables('names').appService), variables('roleDefinitionIds').storageBlobDataReader)]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitionIds').storageBlobDataReader)]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('names').appService), '2023-12-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('names').appService)]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('names').storageAccount)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', variables('names').storageAccount)]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('names').storageAccount), resourceId('Microsoft.Web/sites', variables('names').functionApp), variables('roleDefinitionIds').storageBlobDataOwner)]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitionIds').storageBlobDataOwner)]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('names').functionApp), '2023-12-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('names').functionApp)]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('names').storageAccount)]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+      "apiVersion": "2024-05-15",
+      "name": "[format('{0}/{1}', variables('names').cosmosAccount, guid(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount), resourceId('Microsoft.Web/sites', variables('names').appService), variables('cosmosDataContributorRoleId')))]",
+      "properties": {
+        "roleDefinitionId": "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', variables('names').cosmosAccount, variables('cosmosDataContributorRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('names').appService), '2023-12-01', 'full').identity.principalId]",
+        "scope": "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount)]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('names').appService)]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount)]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+      "apiVersion": "2024-05-15",
+      "name": "[format('{0}/{1}', variables('names').cosmosAccount, guid(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount), resourceId('Microsoft.Web/sites', variables('names').functionApp), variables('cosmosDataContributorRoleId')))]",
+      "properties": {
+        "roleDefinitionId": "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', variables('names').cosmosAccount, variables('cosmosDataContributorRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('names').functionApp), '2023-12-01', 'full').identity.principalId]",
+        "scope": "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount)]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount)]",
+        "[resourceId('Microsoft.Web/sites', variables('names').functionApp)]"
+      ]
+    }
+  ],
+  "outputs": {
+    "appServiceEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Primary HTTPS endpoint of the HR Copilot App Service."
+      },
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', variables('names').appService), '2023-12-01').defaultHostName)]"
+    },
+    "functionAppEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Primary HTTPS endpoint of the SLA Function App."
+      },
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', variables('names').functionApp), '2023-12-01').defaultHostName)]"
+    },
+    "cosmosDbEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Cosmos DB document endpoint."
+      },
+      "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('names').cosmosAccount), '2024-05-15').documentEndpoint]"
+    },
+    "aiSearchEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure AI Search service endpoint."
+      },
+      "value": "[format('https://{0}.search.windows.net', variables('names').searchService)]"
+    },
+    "serviceBusEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Service Bus namespace fully qualified domain name."
+      },
+      "value": "[format('{0}.servicebus.windows.net', variables('names').serviceBusNamespace)]"
+    },
+    "keyVaultUri": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Key Vault URI."
+      },
+      "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('names').keyVault), '2023-07-01').vaultUri]"
+    },
+    "openAiEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Resolved Azure OpenAI / Foundry endpoint."
+      },
+      "value": "[variables('openAiResolvedEndpoint')]"
+    },
+    "resourceNames": {
+      "type": "object",
+      "metadata": {
+        "description": "Resource names dictionary for operational reference."
+      },
+      "value": {
+        "appService": "[variables('names').appService]",
+        "functionApp": "[variables('names').functionApp]",
+        "cosmosAccount": "[variables('names').cosmosAccount]",
+        "searchService": "[variables('names').searchService]",
+        "serviceBusNamespace": "[variables('names').serviceBusNamespace]",
+        "keyVault": "[variables('names').keyVault]",
+        "storageAccount": "[variables('names').storageAccount]"
+      }
+    }
+  }
+}

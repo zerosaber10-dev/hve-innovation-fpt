@@ -14,6 +14,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import ValidationError
 
 BORROWING_CEILING_DAYS: Final[Decimal] = Decimal("3")
+CERTIFIED_MEDICAL_LEAVE_STATUS: Final[str] = "Certified Medical Leave Approved by HR"
 _SCHEMA_PATH: Final[Path] = Path(__file__).parent / "schemas" / "ticket.schema.json"
 _TICKET_SCHEMA: Final[dict[str, object]] = json.loads(
     _SCHEMA_PATH.read_text(encoding="utf-8")
@@ -45,6 +46,16 @@ class TicketStatus(StrEnum):
     CANCELLED = "CANCELLED"
 
 
+class LifecycleAction(StrEnum):
+    """Explicit lifecycle actions recorded in audit events."""
+
+    SUBMIT = "SUBMIT"
+    APPROVE = "APPROVE"
+    REJECT = "REJECT"
+    ESCALATE = "ESCALATE"
+    CANCEL = "CANCEL"
+
+
 class TicketSchemaError(ValueError):
     """Raised when a ticket violates the published JSON Schema contract."""
 
@@ -71,11 +82,22 @@ class LifecycleEvent:
     """Attributable record of one accepted lifecycle transition."""
 
     actor_id: str
+    action: LifecycleAction
     channel: str
     occurred_at: datetime
     previous_status: TicketStatus
     new_status: TicketStatus
     rejection_reason: str | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.action, LifecycleAction):
+            try:
+                object.__setattr__(self, "action", LifecycleAction(str(self.action)))
+            except ValueError as error:
+                raise TicketRuleViolation(
+                    f"Invalid lifecycle action {self.action!r}; must be one of "
+                    f"{', '.join(a.value for a in LifecycleAction)}."
+                ) from error
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,7 +144,23 @@ class Ticket:
         }
 
     def manager_view(self) -> ManagerTicketView:
-        """Return an allowlisted manager view without private fields."""
+        """Return an allowlisted manager view without private fields.
+
+        Enforces a certification-only disclosure boundary for SICK_LEAVE per
+        SOP-HR-042 and PRD NFR-008 so managers see certification status without
+        sensitive medical details, employee reasons, or timing/quantity leakage.
+        """
+        if self.ticket_type is TicketType.SICK_LEAVE:
+            return ManagerTicketView(
+                ticket_id=self.ticket_id,
+                ticket_type=self.ticket_type,
+                status=self.status,
+                start_date=None,
+                end_date=None,
+                requested_leave_days=None,
+                requested_hours=None,
+                certification_status=CERTIFIED_MEDICAL_LEAVE_STATUS,
+            )
         return ManagerTicketView(
             ticket_id=self.ticket_id,
             ticket_type=self.ticket_type,
@@ -131,6 +169,7 @@ class Ticket:
             end_date=self.end_date,
             requested_leave_days=self.requested_leave_days,
             requested_hours=self.requested_hours,
+            certification_status=None,
         )
 
 
@@ -145,6 +184,7 @@ class ManagerTicketView:
     end_date: date | None
     requested_leave_days: Decimal | None
     requested_hours: Decimal | None
+    certification_status: str | None = None
 
 
 _ALLOWED_TRANSITIONS: Final[dict[TicketStatus, frozenset[TicketStatus]]] = {
@@ -165,6 +205,14 @@ _ALLOWED_TRANSITIONS: Final[dict[TicketStatus, frozenset[TicketStatus]]] = {
     TicketStatus.APPROVED: frozenset(),
     TicketStatus.REJECTED: frozenset(),
     TicketStatus.CANCELLED: frozenset(),
+}
+
+_DEFAULT_ACTIONS: Final[dict[TicketStatus, LifecycleAction]] = {
+    TicketStatus.PENDING_APPROVAL: LifecycleAction.SUBMIT,
+    TicketStatus.APPROVED: LifecycleAction.APPROVE,
+    TicketStatus.REJECTED: LifecycleAction.REJECT,
+    TicketStatus.ESCALATED: LifecycleAction.ESCALATE,
+    TicketStatus.CANCELLED: LifecycleAction.CANCEL,
 }
 
 
@@ -221,6 +269,7 @@ def submit_ticket(
         actor_id=actor_id,
         channel=channel,
         occurred_at=occurred_at,
+        action=LifecycleAction.SUBMIT,
     )
 
 
@@ -231,13 +280,14 @@ def transition_ticket(
     actor_id: str,
     channel: str,
     occurred_at: datetime,
+    action: LifecycleAction | str | None = None,
     rejection_reason: str | None = None,
 ) -> Ticket:
     """Apply one allowed, attributable lifecycle transition.
 
     Raises:
         InvalidTransitionError: If the transition is not allowed.
-        TicketRuleViolation: If a rejection reason is missing or invalid.
+        TicketRuleViolation: If a rejection reason or action is missing or invalid.
         TicketSchemaError: If the resulting ticket violates the JSON Schema.
     """
     if target_status not in _ALLOWED_TRANSITIONS[ticket.status]:
@@ -253,9 +303,29 @@ def transition_ticket(
                 "A non-empty rejection reason is required before rejecting a ticket."
             )
     _validate_transition_metadata(actor_id, channel, occurred_at)
+    if action is not None:
+        if isinstance(action, LifecycleAction):
+            resolved_action = action
+        else:
+            try:
+                resolved_action = LifecycleAction(str(action))
+            except ValueError as error:
+                raise TicketRuleViolation(
+                    f"Invalid lifecycle action {action!r}; must be one of "
+                    f"{', '.join(a.value for a in LifecycleAction)}."
+                ) from error
+    else:
+        if target_status not in _DEFAULT_ACTIONS:
+            raise TicketRuleViolation(
+                "No default lifecycle action mapped for target status "
+                f"{target_status.value}."
+            )
+        resolved_action = _DEFAULT_ACTIONS[target_status]
+
     normalized_time = occurred_at.astimezone(UTC)
     event = LifecycleEvent(
         actor_id=actor_id,
+        action=resolved_action,
         channel=channel,
         occurred_at=normalized_time,
         previous_status=ticket.status,
