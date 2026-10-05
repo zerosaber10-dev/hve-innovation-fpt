@@ -1,0 +1,148 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Azure.CreateUIDef",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "basics": [
+      {
+        "name": "appSettingsBasicsHelp",
+        "type": "Microsoft.Common.TextBlock",
+        "options": {
+          "text": "Configure the core deployment settings, resource group, and location for the HR Time and Leave Copilot Managed Application."
+        }
+      }
+    ],
+    "steps": [
+      {
+        "name": "appSettingsStep",
+        "label": "App Settings",
+        "subPrompt": {
+          "name": "appSettingsSubPrompt",
+          "label": "Application Settings"
+        },
+        "elements": [
+          {
+            "name": "environmentName",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Environment",
+            "defaultValue": "dev",
+            "toolTip": "The deployment environment name (dev, test, prod).",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "Development (dev)",
+                  "value": "dev"
+                },
+                {
+                  "label": "Test (test)",
+                  "value": "test"
+                },
+                {
+                  "label": "Production (prod)",
+                  "value": "prod"
+                }
+              ],
+              "required": true
+            }
+          },
+          {
+            "name": "appNamePrefix",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Application Name Prefix",
+            "defaultValue": "hr-time-leave",
+            "toolTip": "Resource prefix used for standardized naming (3-16 characters).",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-z0-9-]{3,16}$",
+              "validationMessage": "The prefix must be between 3 and 16 lowercase alphanumeric characters or hyphens."
+            }
+          },
+          {
+            "name": "entraTenantId",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Entra Tenant ID",
+            "defaultValue": "",
+            "toolTip": "Microsoft Entra ID tenant ID (GUID) for authentication.",
+            "constraints": {
+              "required": false
+            }
+          },
+          {
+            "name": "botAppId",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Teams Bot App ID",
+            "defaultValue": "",
+            "toolTip": "Application / Client ID for the Microsoft Teams Bot registration.",
+            "constraints": {
+              "required": false
+            }
+          },
+          {
+            "name": "appServicePlanSku",
+            "type": "Microsoft.Common.DropDown",
+            "label": "App Service Plan SKU",
+            "defaultValue": "B1",
+            "toolTip": "SKU name for App Service Plan.",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "B1 (Basic - Dev/Test)",
+                  "value": "B1"
+                },
+                {
+                  "label": "P1v3 (Premium v3 - Production)",
+                  "value": "P1v3"
+                },
+                {
+                  "label": "P2v3 (Premium v3 - High Capacity)",
+                  "value": "P2v3"
+                }
+              ],
+              "required": true
+            }
+          },
+          {
+            "name": "searchSku",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Azure AI Search SKU",
+            "defaultValue": "standard",
+            "toolTip": "SKU name for Azure AI Search service.",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "Basic",
+                  "value": "basic"
+                },
+                {
+                  "label": "Standard",
+                  "value": "standard"
+                }
+              ],
+              "required": true
+            }
+          },
+          {
+            "name": "existingOpenAiEndpoint",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Existing Azure OpenAI Endpoint",
+            "defaultValue": "",
+            "toolTip": "Azure OpenAI / Foundry endpoint. If empty, a Cognitive Services OpenAI account is provisioned.",
+            "constraints": {
+              "required": false
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "environmentName": "[steps('appSettingsStep').environmentName]",
+      "location": "[location()]",
+      "appNamePrefix": "[steps('appSettingsStep').appNamePrefix]",
+      "entraTenantId": "[steps('appSettingsStep').entraTenantId]",
+      "botAppId": "[steps('appSettingsStep').botAppId]",
+      "appServicePlanSku": "[steps('appSettingsStep').appServicePlanSku]",
+      "searchSku": "[steps('appSettingsStep').searchSku]",
+      "existingOpenAiEndpoint": "[steps('appSettingsStep').existingOpenAiEndpoint]"
+    }
+  }
+}
