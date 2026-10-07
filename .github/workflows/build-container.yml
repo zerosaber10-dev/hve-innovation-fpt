@@ -2,9 +2,15 @@ name: Build and Push HR Copilot Container
 
 on:
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build and package'
+        required: true
+        default: 'hr-assisstant'
   push:
     branches:
       - hr-assisstant
+      - main
     paths:
       - 'src/**'
       - 'Dockerfile'
@@ -21,6 +27,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
