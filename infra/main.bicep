@@ -33,6 +33,9 @@ param searchSku string = 'standard'
 @description('Azure OpenAI / Foundry endpoint. If empty, a Cognitive Services OpenAI account is provisioned.')
 param existingOpenAiEndpoint string = ''
 
+@description('Container image repository and tag for the HR Copilot App Service.')
+param containerImage string = 'mcr.microsoft.com/azure-app-service/python:3.11'
+
 @description('Tags to apply to all resources.')
 param tags object = {
   Project: 'Enterprise HR Time and Leave Copilot'
@@ -365,7 +368,7 @@ resource cognitiveService 'Microsoft.CognitiveServices/accounts@2024-10-01' = if
 
 resource gptDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = if (empty(existingOpenAiEndpoint)) {
   parent: cognitiveService
-  name: 'gpt-4o'
+  name: 'gpt-6-luna'
   sku: {
     name: 'Standard'
     capacity: 20
@@ -373,8 +376,8 @@ resource gptDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10
   properties: {
     model: {
       format: 'OpenAI'
-      name: 'gpt-4o'
-      version: '2024-08-06'
+      name: 'gpt-6-luna'
+      version: '2026-preview'
     }
   }
 }
@@ -425,7 +428,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
     serverFarmId: appServicePlan.id
     httpsOnly: true
     siteConfig: {
-      linuxFxVersion: 'PYTHON|3.11'
+      linuxFxVersion: 'DOCKER|${containerImage}'
       alwaysOn: (appServicePlanSku != 'F1' && appServicePlanSku != 'D1')
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
@@ -483,8 +486,16 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
           value: botAppId
         }
         {
-          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
-          value: 'true'
+          name: 'WEBSITES_PORT'
+          value: '8000'
+        }
+        {
+          name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
+          value: 'false'
+        }
+        {
+          name: 'WEBSITES_CONTAINER_START_TIME_LIMIT'
+          value: '600'
         }
       ]
     }

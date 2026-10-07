@@ -1,0 +1,1113 @@
+{
+  "schemaVersion": "3.0",
+  "metadata": {
+    "title": "Enterprise HR Time and Leave Copilot Architecture",
+    "subtitle": "Azure Managed Application in Customer Subscription with Microsoft Teams Copilot Front Door",
+    "viewIntent": "architecture",
+    "route": {
+      "family": "runtime-cloud",
+      "profile": "deployment"
+    },
+    "audience": "Enterprise Architecture & Cloud Security",
+    "deliveryTarget": "engineering-doc",
+    "language": "en",
+    "assumptions": [
+      "Managed Resource Group Deny Assignment is active on all resources in phases 2, 3, 4, 5."
+    ],
+    "evidenceModel": "source_model.json"
+  },
+  "semantics": {
+    "groups": [
+      {
+        "id": "b_client",
+        "label": "1. Microsoft 365 Surface",
+        "kind": "phase",
+        "provenance": []
+      },
+      {
+        "id": "b_gateway",
+        "label": "2. Channel & Ingress \u00c2\u00b7 MRG",
+        "kind": "phase",
+        "provenance": []
+      },
+      {
+        "id": "b_app",
+        "label": "3. App Logic & HRIS Integrations \u00c2\u00b7 MRG",
+        "kind": "phase",
+        "provenance": []
+      },
+      {
+        "id": "b_ai",
+        "label": "4. AI Knowledge & Reasoning \u00c2\u00b7 MRG",
+        "kind": "phase",
+        "provenance": []
+      },
+      {
+        "id": "b_state",
+        "label": "5. State & SLA Execution \u00c2\u00b7 MRG",
+        "kind": "phase",
+        "provenance": []
+      },
+      {
+        "id": "b_platform",
+        "label": "Platform Security, Observability & JIT Elevation \u00c2\u00b7 Zero Standing Access",
+        "kind": "foundation",
+        "provenance": []
+      }
+    ],
+    "entities": [
+      {
+        "id": "u_emp",
+        "label": "Employees & Managers",
+        "kind": "component",
+        "caption": "Teams Desktop & Mobile",
+        "provenance": [
+          {
+            "factId": "fact-teams-surface",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "m365_teams",
+        "label": "Microsoft Teams",
+        "kind": "service",
+        "caption": "Adaptive Cards v1.5 UI",
+        "provenance": [
+          {
+            "factId": "fact-teams-surface",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "bot_svc",
+        "label": "Azure Bot Service",
+        "kind": "service",
+        "caption": "Activity Routing Webhook",
+        "provenance": [
+          {
+            "factId": "fact-teams-surface",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "entra_id",
+        "label": "Microsoft Entra ID",
+        "kind": "service",
+        "caption": "OAuth 2.0 / OBO Token Exchange",
+        "provenance": [
+          {
+            "factId": "fact-external-connectors",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "app_svc",
+        "label": "Azure App Service",
+        "kind": "service",
+        "caption": "LangGraph State Machine",
+        "provenance": [
+          {
+            "factId": "fact-app-service",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "ms_graph",
+        "label": "Microsoft Graph API",
+        "kind": "service",
+        "caption": "Direct Manager Org Hierarchy",
+        "provenance": [
+          {
+            "factId": "fact-external-connectors",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "ext_hris",
+        "label": "Enterprise HRIS",
+        "kind": "datastore",
+        "caption": "Workday / SAP Leave Balances",
+        "provenance": [
+          {
+            "factId": "fact-external-connectors",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "blob_storage",
+        "label": "Azure Storage Accounts",
+        "kind": "datastore",
+        "caption": "Approved HR Policy Docs",
+        "provenance": [
+          {
+            "factId": "fact-storage",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "ai_search",
+        "label": "Azure AI Search",
+        "kind": "datastore",
+        "caption": "Hybrid BM25 + Vector Index",
+        "provenance": [
+          {
+            "factId": "fact-ai-search",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "ai_foundry",
+        "label": "Microsoft Foundry Models",
+        "kind": "model",
+        "caption": "GPT-4o Policy Q&A & Leave Drafting",
+        "provenance": [
+          {
+            "factId": "fact-ai-foundry",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "cosmos_db",
+        "label": "Azure Cosmos DB",
+        "kind": "datastore",
+        "caption": "Tickets & Session Memory",
+        "provenance": [
+          {
+            "factId": "fact-cosmos",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "service_bus",
+        "label": "Azure Event Hubs / Bus",
+        "kind": "queue",
+        "caption": "hr-sla-jobs Async Queue",
+        "provenance": [
+          {
+            "factId": "fact-service-bus",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "func_sla",
+        "label": "Azure Functions",
+        "kind": "service",
+        "caption": "48h Reminder & 72h Escalation Engine",
+        "provenance": [
+          {
+            "factId": "fact-sla-functions",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "key_vault",
+        "label": "Azure Key Vault",
+        "kind": "service",
+        "caption": "Zero Hardcoded Secrets",
+        "provenance": [
+          {
+            "factId": "fact-security",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "app_insights",
+        "label": "Azure Monitor",
+        "kind": "service",
+        "caption": "PII-Redacted Audit Logs",
+        "provenance": [
+          {
+            "factId": "fact-telemetry",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "jit_service",
+        "label": "Azure JIT Access Service",
+        "kind": "service",
+        "caption": "Customer-Approved 4h Elevation",
+        "provenance": [
+          {
+            "factId": "fact-jit-access",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "pub_ops",
+        "label": "Publisher Support Operations",
+        "kind": "service",
+        "caption": "Zero Standing Access",
+        "provenance": [
+          {
+            "factId": "fact-jit-access",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-icons",
+            "confidence": "confirmed"
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "id": "e1",
+        "source": "u_emp",
+        "target": "m365_teams",
+        "kind": "sync",
+        "label": "Chat & adaptive cards",
+        "provenance": [
+          {
+            "factId": "fact-teams-surface",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e2",
+        "source": "m365_teams",
+        "target": "bot_svc",
+        "kind": "sync",
+        "label": "Forward activity",
+        "provenance": [
+          {
+            "factId": "fact-teams-surface",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e3",
+        "source": "bot_svc",
+        "target": "entra_id",
+        "kind": "sync",
+        "label": "OBO token exchange",
+        "provenance": [
+          {
+            "factId": "fact-teams-surface",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-external-connectors",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e4",
+        "source": "bot_svc",
+        "target": "app_svc",
+        "kind": "sync",
+        "label": "Webhook event",
+        "provenance": [
+          {
+            "factId": "fact-teams-surface",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-app-service",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e5",
+        "source": "app_svc",
+        "target": "ms_graph",
+        "kind": "read",
+        "label": "Manager org hierarchy",
+        "provenance": [
+          {
+            "factId": "fact-app-service",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-external-connectors",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e6",
+        "source": "app_svc",
+        "target": "ext_hris",
+        "kind": "read",
+        "label": "Leave balance check",
+        "provenance": [
+          {
+            "factId": "fact-app-service",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-external-connectors",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e7",
+        "source": "blob_storage",
+        "target": "ai_search",
+        "kind": "data",
+        "label": "Index policy documents",
+        "provenance": [
+          {
+            "factId": "fact-storage",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-ai-search",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e8",
+        "source": "app_svc",
+        "target": "ai_search",
+        "kind": "retrieval",
+        "label": "Hybrid policy query",
+        "provenance": [
+          {
+            "factId": "fact-app-service",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-ai-search",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e9",
+        "source": "ai_search",
+        "target": "ai_foundry",
+        "kind": "data",
+        "label": "Ranked policy citations",
+        "provenance": [
+          {
+            "factId": "fact-ai-search",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-ai-foundry",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e10",
+        "source": "ai_foundry",
+        "target": "cosmos_db",
+        "kind": "write",
+        "label": "Tickets & memory state",
+        "provenance": [
+          {
+            "factId": "fact-ai-foundry",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-cosmos",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e11",
+        "source": "cosmos_db",
+        "target": "service_bus",
+        "kind": "async",
+        "label": "Queue SLA timer job",
+        "provenance": [
+          {
+            "factId": "fact-cosmos",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-service-bus",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e12",
+        "source": "service_bus",
+        "target": "func_sla",
+        "kind": "async",
+        "label": "Trigger due SLA job",
+        "provenance": [
+          {
+            "factId": "fact-service-bus",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-sla-functions",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e13",
+        "source": "func_sla",
+        "target": "cosmos_db",
+        "kind": "write",
+        "label": "Escalate ticket status",
+        "provenance": [
+          {
+            "factId": "fact-sla-functions",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-cosmos",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e14",
+        "source": "pub_ops",
+        "target": "jit_service",
+        "kind": "sync",
+        "label": "Request elevation",
+        "provenance": [
+          {
+            "factId": "fact-jit-access",
+            "confidence": "confirmed"
+          }
+        ]
+      },
+      {
+        "id": "e15",
+        "source": "jit_service",
+        "target": "app_svc",
+        "kind": "sync",
+        "label": "4h JIT elevation",
+        "provenance": [
+          {
+            "factId": "fact-jit-access",
+            "confidence": "confirmed"
+          },
+          {
+            "factId": "fact-mrg-boundary",
+            "confidence": "confirmed"
+          }
+        ]
+      }
+    ]
+  },
+  "presentation": {
+    "theme": "microsoft-reference",
+    "visualArchetype": "microsoft-reference",
+    "layoutStrategy": "dense-phase-columns",
+    "showTitle": false,
+    "direction": "LR",
+    "canvas": {
+      "width": 2200,
+      "height": 1200,
+      "background": "#FFFFFF"
+    },
+    "legend": [],
+    "groups": [
+      {
+        "semanticId": "b_client",
+        "presentation": "phase-column",
+        "weight": 0.85,
+        "order": 1
+      },
+      {
+        "semanticId": "b_gateway",
+        "presentation": "phase-column",
+        "weight": 1.0,
+        "order": 2
+      },
+      {
+        "semanticId": "b_app",
+        "presentation": "phase-column",
+        "weight": 1.25,
+        "order": 3
+      },
+      {
+        "semanticId": "b_ai",
+        "presentation": "phase-column",
+        "weight": 1.25,
+        "order": 4
+      },
+      {
+        "semanticId": "b_state",
+        "presentation": "phase-column",
+        "weight": 1.05,
+        "order": 5
+      },
+      {
+        "semanticId": "b_platform",
+        "presentation": "foundation-band",
+        "order": 9
+      }
+    ],
+    "entities": [
+      {
+        "semanticId": "u_emp",
+        "boundary": "b_client",
+        "presentation": "service-tile",
+        "assetRef": "employees-managers",
+        "importance": "primary",
+        "layout": {
+          "order": 1,
+          "track": 0.3
+        }
+      },
+      {
+        "semanticId": "m365_teams",
+        "boundary": "b_client",
+        "presentation": "service-tile",
+        "assetRef": "microsoft-teams",
+        "importance": "primary",
+        "layout": {
+          "order": 2,
+          "track": 0.7
+        }
+      },
+      {
+        "semanticId": "bot_svc",
+        "boundary": "b_gateway",
+        "presentation": "service-tile",
+        "assetRef": "azure-bot-service",
+        "importance": "primary",
+        "layout": {
+          "order": 1,
+          "track": 0.35
+        }
+      },
+      {
+        "semanticId": "entra_id",
+        "boundary": "b_gateway",
+        "presentation": "service-icon",
+        "assetRef": "azure-managed-identity",
+        "importance": "primary",
+        "layout": {
+          "order": 2,
+          "track": 0.75
+        }
+      },
+      {
+        "semanticId": "app_svc",
+        "boundary": "b_app",
+        "presentation": "service-icon",
+        "assetRef": "azure-app-service",
+        "importance": "primary",
+        "layout": {
+          "order": 1,
+          "track": 0.22
+        }
+      },
+      {
+        "semanticId": "ms_graph",
+        "boundary": "b_app",
+        "presentation": "service-icon",
+        "assetRef": "azure-logic-apps",
+        "importance": "primary",
+        "layout": {
+          "order": 2,
+          "track": 0.55
+        }
+      },
+      {
+        "semanticId": "ext_hris",
+        "boundary": "b_app",
+        "presentation": "service-icon",
+        "assetRef": "azure-sql-database",
+        "importance": "primary",
+        "layout": {
+          "order": 3,
+          "track": 0.85
+        }
+      },
+      {
+        "semanticId": "blob_storage",
+        "boundary": "b_ai",
+        "presentation": "service-icon",
+        "assetRef": "azure-storage-accounts",
+        "importance": "primary",
+        "layout": {
+          "order": 1,
+          "track": 0.2
+        }
+      },
+      {
+        "semanticId": "ai_search",
+        "boundary": "b_ai",
+        "presentation": "service-icon",
+        "assetRef": "azure-ai-search",
+        "importance": "primary",
+        "layout": {
+          "order": 2,
+          "track": 0.52
+        }
+      },
+      {
+        "semanticId": "ai_foundry",
+        "boundary": "b_ai",
+        "presentation": "service-icon",
+        "assetRef": "microsoft-foundry-models",
+        "importance": "primary",
+        "layout": {
+          "order": 3,
+          "track": 0.84
+        }
+      },
+      {
+        "semanticId": "cosmos_db",
+        "boundary": "b_state",
+        "presentation": "service-icon",
+        "assetRef": "azure-cosmos-db",
+        "importance": "primary",
+        "layout": {
+          "order": 1,
+          "track": 0.25
+        }
+      },
+      {
+        "semanticId": "service_bus",
+        "boundary": "b_state",
+        "presentation": "service-icon",
+        "assetRef": "azure-event-hubs",
+        "importance": "primary",
+        "layout": {
+          "order": 2,
+          "track": 0.6
+        }
+      },
+      {
+        "semanticId": "func_sla",
+        "boundary": "b_state",
+        "presentation": "service-icon",
+        "assetRef": "azure-functions",
+        "importance": "primary",
+        "layout": {
+          "order": 3,
+          "track": 0.9
+        }
+      },
+      {
+        "semanticId": "key_vault",
+        "boundary": "b_platform",
+        "presentation": "service-icon",
+        "assetRef": "azure-key-vault",
+        "importance": "support",
+        "layout": {
+          "order": 1
+        }
+      },
+      {
+        "semanticId": "app_insights",
+        "boundary": "b_platform",
+        "presentation": "service-icon",
+        "assetRef": "azure-monitor",
+        "importance": "support",
+        "layout": {
+          "order": 2
+        }
+      },
+      {
+        "semanticId": "jit_service",
+        "boundary": "b_platform",
+        "presentation": "service-icon",
+        "assetRef": "microsoft-defender-for-cloud",
+        "importance": "support",
+        "layout": {
+          "order": 3
+        }
+      },
+      {
+        "semanticId": "pub_ops",
+        "boundary": "b_platform",
+        "presentation": "service-tile",
+        "assetRef": "publisher-operations",
+        "importance": "support",
+        "layout": {
+          "order": 4
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "semanticId": "e1",
+        "labelMode": "none",
+        "lineClass": "control",
+        "step": "1",
+        "importance": "primary",
+        "layout": {
+          "order": 1,
+          "sourcePort": [
+            0.5,
+            1.0
+          ],
+          "targetPort": [
+            0.5,
+            0.0
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e2",
+        "labelMode": "none",
+        "lineClass": "control",
+        "step": "2",
+        "importance": "primary",
+        "layout": {
+          "order": 2,
+          "sourcePort": [
+            1.0,
+            0.5
+          ],
+          "targetPort": [
+            0.0,
+            0.5
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e3",
+        "labelMode": "none",
+        "lineClass": "control",
+        "step": "3",
+        "importance": "primary",
+        "layout": {
+          "order": 3,
+          "sourcePort": [
+            0.5,
+            1.0
+          ],
+          "targetPort": [
+            0.5,
+            0.0
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e4",
+        "labelMode": "none",
+        "lineClass": "control",
+        "step": "4",
+        "importance": "primary",
+        "layout": {
+          "order": 4,
+          "sourcePort": [
+            1.0,
+            0.5
+          ],
+          "targetPort": [
+            0.0,
+            0.5
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e5",
+        "labelMode": "none",
+        "lineClass": "control",
+        "step": "5",
+        "importance": "primary",
+        "layout": {
+          "order": 5,
+          "sourcePort": [
+            0.5,
+            1.0
+          ],
+          "targetPort": [
+            0.5,
+            0.0
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e6",
+        "labelMode": "none",
+        "lineClass": "control",
+        "step": "6",
+        "importance": "primary",
+        "layout": {
+          "order": 6,
+          "sourcePort": [
+            1.0,
+            0.75
+          ],
+          "targetPort": [
+            1.0,
+            0.5
+          ],
+          "waypoints": [
+            [
+              1229.851851851852,
+              326.96000000000004
+            ],
+            [
+              1229.851851851852,
+              845.8
+            ]
+          ],
+          "badgeSegment": 1,
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e7",
+        "labelMode": "none",
+        "lineClass": "data",
+        "step": "7",
+        "importance": "primary",
+        "layout": {
+          "order": 7,
+          "sourcePort": [
+            0.5,
+            1.0
+          ],
+          "targetPort": [
+            0.5,
+            0.0
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e8",
+        "labelMode": "none",
+        "lineClass": "data",
+        "step": "8",
+        "importance": "primary",
+        "layout": {
+          "order": 8,
+          "sourcePort": [
+            1.0,
+            0.25
+          ],
+          "targetPort": [
+            0.0,
+            0.5
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e9",
+        "labelMode": "none",
+        "lineClass": "data",
+        "step": "9",
+        "importance": "primary",
+        "layout": {
+          "order": 9,
+          "sourcePort": [
+            0.5,
+            1.0
+          ],
+          "targetPort": [
+            0.5,
+            0.0
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e10",
+        "labelMode": "none",
+        "lineClass": "control",
+        "step": "10",
+        "importance": "primary",
+        "layout": {
+          "order": 10,
+          "sourcePort": [
+            1.0,
+            0.5
+          ],
+          "targetPort": [
+            0.0,
+            0.5
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e11",
+        "labelMode": "none",
+        "lineClass": "control",
+        "step": "11",
+        "importance": "primary",
+        "layout": {
+          "order": 11,
+          "sourcePort": [
+            0.5,
+            1.0
+          ],
+          "targetPort": [
+            0.5,
+            0.0
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e12",
+        "labelMode": "none",
+        "lineClass": "control",
+        "step": "12",
+        "importance": "primary",
+        "layout": {
+          "order": 12,
+          "sourcePort": [
+            0.5,
+            1.0
+          ],
+          "targetPort": [
+            0.5,
+            0.0
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e13",
+        "labelMode": "none",
+        "lineClass": "control",
+        "step": "13",
+        "importance": "primary",
+        "layout": {
+          "order": 13,
+          "sourcePort": [
+            1.0,
+            0.5
+          ],
+          "targetPort": [
+            1.0,
+            0.5
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e14",
+        "labelMode": "none",
+        "lineClass": "control",
+        "step": "14",
+        "importance": "primary",
+        "layout": {
+          "order": 14,
+          "sourcePort": [
+            0.0,
+            0.5
+          ],
+          "targetPort": [
+            1.0,
+            0.5
+          ],
+          "badgeT": 0.5
+        }
+      },
+      {
+        "semanticId": "e15",
+        "labelMode": "none",
+        "lineClass": "control",
+        "step": "15",
+        "importance": "primary",
+        "layout": {
+          "order": 15,
+          "rail": "bottom",
+          "lane": 0,
+          "sourcePort": [
+            0.0,
+            0.5
+          ],
+          "targetPort": [
+            0.0,
+            0.8
+          ],
+          "badgeT": 0.5
+        }
+      }
+    ]
+  }
+}

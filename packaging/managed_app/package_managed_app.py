@@ -273,6 +273,92 @@ def validate_parameter_parity(
     return (len(errors) == 0), errors
 
 
+def validate_container_configuration(
+    template_data: dict[str, Any],
+) -> tuple[bool, list[str]]:
+    """Verify that App Service resources in template configure container deployment.
+
+    Targets Microsoft.Web/sites resources with kind='app,linux' and checks:
+    1. linuxFxVersion contains 'DOCKER|'.
+    2. appSettings contains WEBSITES_PORT configured to '8000'.
+    3. appSettings contains WEBSITES_CONTAINER_START_TIME_LIMIT configured to '600'.
+    4. appSettings contains WEBSITES_ENABLE_APP_SERVICE_STORAGE configured to 'false'.
+
+    Args:
+        template_data: Parsed ARM template JSON.
+
+    Returns:
+        tuple[bool, list[str]]: (is_valid, list of error messages)
+    """
+    errors: list[str] = []
+    resources = template_data.get("resources", [])
+
+    app_service_sites = [
+        r
+        for r in resources
+        if r.get("type") == "Microsoft.Web/sites"
+        and "functionapp" not in r.get("kind", "").lower()
+        and "app" in r.get("kind", "").lower()
+    ]
+
+    if not app_service_sites:
+        errors.append(
+            "No App Service resource (kind 'app,linux') found in ARM template"
+        )
+        return False, errors
+
+    for site in app_service_sites:
+        site_name = site.get("name", "<unnamed>")
+        site_config = site.get("properties", {}).get("siteConfig", {})
+
+        linux_fx_version = str(site_config.get("linuxFxVersion", ""))
+        if "DOCKER|" not in linux_fx_version:
+            errors.append(
+                f"Resource '{site_name}' linuxFxVersion does not specify Docker "
+                f"container: expected 'DOCKER|...', got '{linux_fx_version}'"
+            )
+
+        raw_settings = site_config.get("appSettings", [])
+        if isinstance(raw_settings, list):
+            settings_map = {
+                item.get("name"): item.get("value")
+                for item in raw_settings
+                if isinstance(item, dict) and "name" in item
+            }
+        elif isinstance(raw_settings, dict):
+            settings_map = raw_settings
+        else:
+            settings_map = {}
+
+        if "WEBSITES_PORT" not in settings_map:
+            errors.append(f"Resource '{site_name}' missing appSetting 'WEBSITES_PORT'")
+        elif str(settings_map["WEBSITES_PORT"]) != "8000":
+            errors.append(
+                f"Resource '{site_name}' 'WEBSITES_PORT' expected '8000', "
+                f"got '{settings_map['WEBSITES_PORT']}'"
+            )
+
+        limit_key = "WEBSITES_CONTAINER_START_TIME_LIMIT"
+        if limit_key not in settings_map:
+            errors.append(f"Resource '{site_name}' missing appSetting '{limit_key}'")
+        elif str(settings_map[limit_key]) != "600":
+            errors.append(
+                f"Resource '{site_name}' '{limit_key}' expected '600', "
+                f"got '{settings_map[limit_key]}'"
+            )
+
+        storage_key = "WEBSITES_ENABLE_APP_SERVICE_STORAGE"
+        if storage_key not in settings_map:
+            errors.append(f"Resource '{site_name}' missing appSetting '{storage_key}'")
+        elif str(settings_map[storage_key]).lower() != "false":
+            errors.append(
+                f"Resource '{site_name}' '{storage_key}' expected 'false', "
+                f"got '{settings_map[storage_key]}'"
+            )
+
+    return (len(errors) == 0), errors
+
+
 def create_managed_app_package(
     infra_dir: Path | str,
     output_zip: Path | str,
@@ -306,12 +392,18 @@ def create_managed_app_package(
         msg = "; ".join(err_u)
         raise ValueError(f"createUiDefinition.json validation failed: {msg}")
 
-    # 3. Check parameter parity
+    # 3. Check App Service container configuration
+    ok_c, err_c = validate_container_configuration(t_data)
+    if not ok_c:
+        msg = "; ".join(err_c)
+        raise ValueError(f"Container configuration validation failed: {msg}")
+
+    # 4. Check parameter parity
     ok_p, err_p = validate_parameter_parity(t_data, u_data)
     if not ok_p:
         raise ValueError(f"Parameter parity validation failed: {'; '.join(err_p)}")
 
-    # 4. Assemble app.zip
+    # 5. Assemble app.zip
     out_zip.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(out_zip, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
         zf.write(template_path, arcname="mainTemplate.json")
@@ -384,6 +476,12 @@ def main() -> int:
         action="store_true",
         help="Run validation checks without writing zip file",
     )
+    parser.add_argument(
+        "--summary-json",
+        "-s",
+        default=None,
+        help="Optional path to output verification summary JSON",
+    )
 
     args = parser.parse_args()
     infra_dir = Path(args.infra_dir)
@@ -414,6 +512,17 @@ def main() -> int:
         return 1
     print("  [PASS] createUiDefinition.json conforms to schema and zero secrets.")
 
+    print("Checking App Service container deployment configuration in ARM template...")
+    ok_c, err_c = validate_container_configuration(t_data)
+    if not ok_c:
+        print(
+            "ERROR: Container configuration validation failed:\n  "
+            + "\n  ".join(err_c),
+            file=sys.stderr,
+        )
+        return 1
+    print("  [PASS] App Service Linux container configuration verified.")
+
     print("Checking parameter parity between UI outputs and template parameters...")
     ok_p, err_p = validate_parameter_parity(t_data, u_data)
     if not ok_p:
@@ -425,8 +534,22 @@ def main() -> int:
     output_count = len(u_data["parameters"]["outputs"])
     print(f"  [PASS] Parameter parity confirmed ({output_count} outputs mapped).")
 
+    summary = {
+        "status": "PASS",
+        "template": str(template_path),
+        "ui_definition": str(ui_def_path),
+        "outputs_mapped": output_count,
+        "container_validation": "PASS",
+        "secrets_detected": 0,
+    }
+
     if args.validate_only:
         print("Validation complete. Skipping package creation (--validate-only).")
+        if args.summary_json:
+            Path(args.summary_json).write_text(
+                json.dumps(summary, indent=2), encoding="utf-8"
+            )
+            print(f"  [PASS] Summary JSON written: {args.summary_json}")
         return 0
 
     print(f"Building Managed Application package: {output_zip}")
@@ -434,9 +557,17 @@ def main() -> int:
         pkg_path = create_managed_app_package(infra_dir, output_zip)
         print(f"  [PASS] Package successfully created: {pkg_path}")
         print(f"         File size: {pkg_path.stat().st_size:,} bytes")
+        summary["package"] = str(pkg_path)
+        summary["package_size_bytes"] = pkg_path.stat().st_size
     except Exception as e:
         print(f"ERROR: Packaging failed: {e}", file=sys.stderr)
         return 1
+
+    if args.summary_json:
+        Path(args.summary_json).write_text(
+            json.dumps(summary, indent=2), encoding="utf-8"
+        )
+        print(f"  [PASS] Summary JSON written: {args.summary_json}")
 
     return 0
 

@@ -107,7 +107,7 @@ The architecture group’s reported choices and rejected alternatives are listed
 
 ### Retrieval and Models
 
-* Azure AI Foundry with hybrid BM25/vector Azure AI Search and semantic reranking, selected.
+* Azure AI Foundry with `gpt-6-luna` (version `2026-preview`) as core synthesis model, paired with hybrid BM25/vector Azure AI Search and semantic reranking, selected.
 * Dense vector-only search, rejected per requester-reported evaluation.
 * Full-context policy window stuffing, rejected per requester-reported evaluation.
 
@@ -119,7 +119,7 @@ The architecture group’s reported choices and rejected alternatives are listed
 
 ## Decision Outcome
 
-Chosen baseline: **LangGraph with MCP tool execution in Azure App Service; Azure AI Foundry with hybrid BM25/vector Azure AI Search and semantic reranking; and separate Cosmos DB stores for ticket/audit data and conversation memory.** Treat these as three named sub-decisions so each can be revisited independently. Keep the overall ADR in `proposed` status until the named architecture/design authority adopts it.
+Chosen baseline: **LangGraph with MCP tool execution in Azure App Service; Azure AI Foundry with `gpt-6-luna` (version `2026-preview`) model deployment and hybrid BM25/vector Azure AI Search with semantic reranking; and separate Cosmos DB stores for ticket/audit data and conversation memory.** Treat these as three named sub-decisions so each can be revisited independently. Keep the overall ADR in `proposed` status until the named architecture/design authority adopts it.
 
 ### Driver-by-Option Assessment
 
@@ -136,12 +136,12 @@ Qualitative assessment based on the supplied workflow constraints and the reques
 
 #### Retrieval and Model Options
 
-| Driver | Foundry + hybrid Search + reranking | Dense vector-only | Full-context window stuffing |
+| Driver | Foundry (gpt-6-luna) + hybrid Search + reranking | Dense vector-only | Full-context window stuffing |
 |---|---|---|---|
-| D1 privacy and authorization | Partial: supports filtered retrieval; authorization and PHI redaction remain application responsibilities. | Partial: same field and tenant controls are still required. | Weak: sends broader policy context to the model and increases minimization burden. |
-| D2 controlled workflow | Partial: grounded answers support policy explanation but do not make approval decisions. | Partial: retrieval quality does not govern ticket transitions. | Partial: model context does not govern ticket transitions. |
-| D3 service qualities | Partial: reranking adds a stage that must be measured against p95. | Partial: may reduce retrieval stages but risks exact-clause misses. | Weak: requester reports rising token cost and latency as the policy set grows. |
-| D4 integration and economics | Strong: exact-term and semantic retrieval support citations as policy libraries grow; capacity and token costs need measurement. | Partial: less retrieval complexity, with reported risk of numeric and policy-code false matches. | Weak: token usage grows with context size and library expansion. |
+| D1 privacy and authorization | Partial: supports filtered retrieval and strict prompt grounding with gpt-6-luna; authorization and PHI redaction remain application responsibilities. | Partial: same field and tenant controls are still required. | Weak: sends broader policy context to the model and increases minimization burden. |
+| D2 controlled workflow | Partial: grounded answers from gpt-6-luna support policy explanation but do not make approval decisions. | Partial: retrieval quality does not govern ticket transitions. | Partial: model context does not govern ticket transitions. |
+| D3 service qualities | Partial: gpt-6-luna provides superior reasoning and optimized latency, though reranking adds a stage that must be measured against p95. | Partial: may reduce retrieval stages but risks exact-clause misses. | Weak: requester reports rising token cost and latency as the policy set grows. |
+| D4 integration and economics | Strong: exact-term and semantic retrieval support citations as policy libraries grow; gpt-6-luna token economics and capacity need measurement. | Partial: less retrieval complexity, with reported risk of numeric and policy-code false matches. | Weak: token usage grows with context size and library expansion. |
 
 #### Persistence Options
 
@@ -182,7 +182,7 @@ flowchart TB
     bot["Azure Bot Service"]
     app["Azure App Service: LangGraph + internal MCP"]
     entra["Microsoft Entra ID: OBO"]
-    foundry["Azure AI Foundry: models + moderation"]
+    foundry["Azure AI Foundry: gpt-6-luna + moderation"]
     search["Azure AI Search: BM25 + vector + semantic reranker"]
     storage[("Azure Storage: approved policy sources")]
     ticketdb[("Cosmos DB: ticket state + audit events")]
@@ -215,7 +215,7 @@ Arrows denote planned data, request, or control flow. The diagram is a view of t
 
 * Teams and Bot Service carry employee conversations and manager approval actions to and from the application.
 * App Service performs orchestration, identity-aware tool execution, model/retrieval calls, and persistence operations.
-* Azure AI Search retrieves policy evidence from Storage-backed sources; Azure AI Foundry provides model and moderation capabilities.
+* Azure AI Search retrieves policy evidence from Storage-backed sources; Azure AI Foundry provides gpt-6-luna model and moderation capabilities.
 * Service Bus and Functions process due reminders and escalations; Functions re-check ticket state before writing audit events.
 * HRIS and Graph are external dependencies accessed through bounded MCP connectors.
 
@@ -243,7 +243,7 @@ Arrows denote planned data, request, or control flow. The diagram is a view of t
 * Microsoft Teams, Azure Bot Service, and manager approval cards.
 * Microsoft Entra ID OBO authentication and authorization.
 * Azure App Service, LangGraph state machine, internal MCP server, and connector boundaries.
-* Azure AI Foundry model deployments and content moderation.
+* Azure AI Foundry model deployments (gpt-6-luna, text-embedding-3-small) and content moderation.
 * Azure AI Search hybrid retrieval, semantic reranking, and Storage-backed policy indexing.
 * Cosmos DB ticket/audit store and separate conversation-memory store.
 * HRIS and Microsoft Graph integrations.

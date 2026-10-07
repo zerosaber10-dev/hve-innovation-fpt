@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "2.0",
+  "checkedAt": "2026-10-05T08:46:42Z",
+  "tier": "portable",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "python": "3.11.2",
+  "node": "v24.14.1",
+  "drawio": null,
+  "skillRoot": "C:\\Users\\ADMIN\\hve-innovation-fpt\\.agents\\skills\\nexcanvas-drawio",
+  "capabilities": {
+    "authorNativeDrawio": true,
+    "validateContracts": true,
+    "structuralQa": true,
+    "layoutBuiltIn": true,
+    "layoutElk": true,
+    "renderCli": false,
+    "openBrowser": true,
+    "imageGeneration": false
+  },
+  "limitations": [
+    "Draw.io Desktop CLI not found; rendered visual QA cannot be completed."
+  ]
+}

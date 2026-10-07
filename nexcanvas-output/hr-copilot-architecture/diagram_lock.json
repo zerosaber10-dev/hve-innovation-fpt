@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "2.0",
+  "status": "draft",
+  "viewIntent": "architecture",
+  "route": {
+    "family": "software",
+    "profile": "c4-container"
+  },
+  "theme": "technical-editorial",
+  "visualArchetype": "microsoft-reference",
+  "canvas": {
+    "width": 1600,
+    "height": 900
+  },
+  "sourceHash": "18c781b3c5a1112c650d8f08e984007ee3e8a0da266cd4ce64fae156c9cce967",
+  "decisions": {
+    "audience": "engineering stakeholders",
+    "viewIntent": "architecture",
+    "deliveryTarget": "readme",
+    "notation": "c4",
+    "layout": "nested",
+    "visualArchetype": "microsoft-reference",
+    "assetPolicy": "verified-exact-or-generic"
+  }
+}

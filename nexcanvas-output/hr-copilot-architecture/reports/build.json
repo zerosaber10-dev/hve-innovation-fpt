@@ -1,0 +1,10 @@
+{
+  "output": "artifacts/diagram.drawio",
+  "route": "software/c4-container",
+  "nodes": 1,
+  "edges": 0,
+  "embeddedAssets": [],
+  "modelHash": "454666cf08001efee874dd11fb9777a2f4c01d407b1f1d0f4c46cb0f71cab4a3",
+  "modelSchemaVersion": "3.0",
+  "semanticFingerprint": "ff424d750efe2018972fd9ef198e199a1a531ae0792096b6dc08e2ab2d648148"
+}

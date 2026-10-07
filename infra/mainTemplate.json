@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.47.16.16243",
-      "templateHash": "17266688479178183677"
+      "templateHash": "2984914821570803204"
     }
   },
   "parameters": {
@@ -74,6 +74,13 @@
       "defaultValue": "",
       "metadata": {
         "description": "Azure OpenAI / Foundry endpoint. If empty, a Cognitive Services OpenAI account is provisioned."
+      }
+    },
+    "containerImage": {
+      "type": "string",
+      "defaultValue": "mcr.microsoft.com/azure-app-service/python:3.11",
+      "metadata": {
+        "description": "Container image repository and tag for the HR Copilot App Service."
       }
     },
     "tags": {
@@ -423,7 +430,7 @@
       "condition": "[empty(parameters('existingOpenAiEndpoint'))]",
       "type": "Microsoft.CognitiveServices/accounts/deployments",
       "apiVersion": "2024-10-01",
-      "name": "[format('{0}/{1}', variables('names').cognitiveService, 'gpt-4o')]",
+      "name": "[format('{0}/{1}', variables('names').cognitiveService, 'gpt-6-luna')]",
       "sku": {
         "name": "Standard",
         "capacity": 20
@@ -431,8 +438,8 @@
       "properties": {
         "model": {
           "format": "OpenAI",
-          "name": "gpt-4o",
-          "version": "2024-08-06"
+          "name": "gpt-6-luna",
+          "version": "2026-preview"
         }
       },
       "dependsOn": [
@@ -487,7 +494,7 @@
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('names').appServicePlan)]",
         "httpsOnly": true,
         "siteConfig": {
-          "linuxFxVersion": "PYTHON|3.11",
+          "linuxFxVersion": "[format('DOCKER|{0}', parameters('containerImage'))]",
           "alwaysOn": "[and(not(equals(parameters('appServicePlanSku'), 'F1')), not(equals(parameters('appServicePlanSku'), 'D1')))]",
           "ftpsState": "Disabled",
           "minTlsVersion": "1.2",
@@ -545,8 +552,16 @@
               "value": "[parameters('botAppId')]"
             },
             {
-              "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
-              "value": "true"
+              "name": "WEBSITES_PORT",
+              "value": "8000"
+            },
+            {
+              "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+              "value": "false"
+            },
+            {
+              "name": "WEBSITES_CONTAINER_START_TIME_LIMIT",
+              "value": "600"
             }
           ]
         }

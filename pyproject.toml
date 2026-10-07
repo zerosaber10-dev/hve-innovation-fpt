@@ -5,12 +5,15 @@ description = "Ticket domain foundation for the HR time and leave agent"
 requires-python = ">=3.11"
 dependencies = [
     "jsonschema>=4.23,<5",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.3,<10",
     "ruff>=0.11,<1",
+    "httpx>=0.27.0",
 ]
 
 [build-system]
@@ -22,7 +25,7 @@ packages = ["src/hr_time_leave"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 
 [tool.ruff]
 line-length = 88

@@ -28,7 +28,7 @@ flowchart TB
     end
 
     subgraph AI ["AI & Policy Grounding Tier"]
-        foundry["Azure Cognitive Services / AI Foundry\n- gpt-4o Model\n- text-embedding-3-small"]
+        foundry["Azure Cognitive Services / AI Foundry\n- gpt-6-luna Model\n- text-embedding-3-small"]
         search["Azure AI Search (Standard SKU)\n- BM25 + Vector + Semantic Reranker"]
         storage["Azure Storage Account\n- policy-documents Container"]
     end
@@ -82,7 +82,7 @@ The infrastructure is defined entirely in Bicep with zero hardcoded credentials:
 | **AI Search** | `Microsoft.Search/searchServices` | Hybrid lexical/vector policy search with semantic reranker | `standard` SKU, semantic search enabled |
 | **Service Bus** | `Microsoft.ServiceBus/namespaces` | Delayed reminder messages and escalation jobs | `Standard` SKU, queue `hr-sla-jobs` |
 | **Key Vault** | `Microsoft.KeyVault/vaults` | Secret store with Azure RBAC and purge protection | Standard SKU, soft-delete 90 days |
-| **Cognitive Services** | `Microsoft.CognitiveServices/accounts` | Policy question synthesis and vector embeddings | `AIServices`, S0 SKU, models `gpt-4o` and `text-embedding-3-small` |
+| **Cognitive Services** | `Microsoft.CognitiveServices/accounts` | Policy question synthesis and vector embeddings | `AIServices`, S0 SKU, models `gpt-6-luna` and `text-embedding-3-small` |
 | **Storage Account** | `Microsoft.Storage/storageAccounts` | Storage for policy source documents and Function App state | `Standard_LRS`, TLS 1.2, public blob disabled |
 | **Bot Service** | `Microsoft.BotService/botServices` | Teams channel integration and messaging endpoint | Single-tenant Azure Bot, `MsTeamsChannel` |
 | **Log Analytics & App Insights** | `Microsoft.OperationalInsights/workspaces`, `Microsoft.Insights/components` | Central telemetry, latency, error budgets, and metrics | 90-day retention, local auth disabled |

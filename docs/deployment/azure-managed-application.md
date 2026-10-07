@@ -24,7 +24,7 @@ flowchart TB
             serviceBus["Azure Service Bus (Standard)\n- hr-sla-jobs Queue (Duplicate Detection)"]
             keyVault["Azure Key Vault (RBAC Enabled)\n- Zero Hardcoded Secrets"]
             storage["Azure Storage Account\n- policy-documents Container"]
-            aiFoundry["Azure Cognitive Services / Foundry\n- gpt-4o & text-embedding-3-small"]
+            aiFoundry["Azure Cognitive Services / Foundry\n- gpt-6-luna & text-embedding-3-small"]
             botService["Azure Bot Service\n- Microsoft Teams Channel Integration"]
             monitoring["Log Analytics & Application Insights\n- Redacted Telemetry (Zero PII)"]
 

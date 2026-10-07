@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "2.0",
+  "status": "confirmed",
+  "sources": [
+    {
+      "id": "bicep-iac",
+      "type": "document",
+      "location": "infra/main.bicep",
+      "snapshot": "commit-3197dcb"
+    },
+    {
+      "id": "managed-app-doc",
+      "type": "document",
+      "location": "docs/deployment/azure-managed-application.md",
+      "snapshot": "v1.0"
+    },
+    {
+      "id": "adr-0001",
+      "type": "document",
+      "location": "docs/planning/adrs/0001-choose-agentic-hr-architecture.md",
+      "snapshot": "v1.0"
+    }
+  ],
+  "facts": [
+    {
+      "id": "fact-teams-surface",
+      "claim": "Employees and managers interact through Microsoft Teams and Azure Bot Service with Adaptive Cards.",
+      "evidence": ["adr-0001:L37-L38", "managed-app-doc:L28"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-app-service",
+      "claim": "Azure App Service runs Python 3.11 with FastAPI, LangGraph state machine, and internal MCP server.",
+      "evidence": ["bicep-iac:L256", "managed-app-doc:L20", "adr-0001:L40-L42"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-sla-functions",
+      "claim": "Azure Functions consume Service Bus messages to trigger asynchronous SLA reminders and 72-hour HR escalations.",
+      "evidence": ["bicep-iac:L305", "managed-app-doc:L21", "adr-0001:L50-L51"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-ai-foundry",
+      "claim": "Azure AI Foundry provides gpt-4o for conversational reasoning and text-embedding-3-small for policy embeddings.",
+      "evidence": ["bicep-iac:L348-L396", "managed-app-doc:L27"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-ai-search",
+      "claim": "Azure AI Search provides hybrid BM25 and vector search with section-level citations over approved HR policies.",
+      "evidence": ["bicep-iac:L208", "managed-app-doc:L22", "adr-0001:L46"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-storage",
+      "claim": "Azure Storage Account holds approved HR policy documents for indexing.",
+      "evidence": ["bicep-iac:L130", "managed-app-doc:L26"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-cosmos",
+      "claim": "Azure Cosmos DB stores tickets in hr-ticket-store and conversation memory in hr-conversation-memory.",
+      "evidence": ["bicep-iac:L166", "managed-app-doc:L23", "adr-0001:L48-L49"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-service-bus",
+      "claim": "Azure Service Bus hr-sla-jobs queue holds scheduled reminder and escalation messages with duplicate detection.",
+      "evidence": ["bicep-iac:L232", "managed-app-doc:L24", "adr-0001:L50"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-security",
+      "claim": "Key Vault and Entra ID Managed Identities enforce zero hardcoded secrets and RBAC.",
+      "evidence": ["bicep-iac:L147", "managed-app-doc:L25", "adr-0001:L39"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-telemetry",
+      "claim": "Application Insights and Log Analytics collect PII-redacted audit events and operational metrics.",
+      "evidence": ["bicep-iac:L109-L128", "managed-app-doc:L29"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-external-connectors",
+      "claim": "Microsoft Entra ID, Microsoft Graph, and Enterprise HRIS provide identity, reporting hierarchy, and balance verification.",
+      "evidence": ["adr-0001:L39-L53", "managed-app-doc:L43"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-mrg-boundary",
+      "claim": "All Azure resources are contained in a customer-owned Managed Resource Group with Deny Assignment.",
+      "evidence": ["managed-app-doc:L18", "bicep-iac:L10"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-jit-access",
+      "claim": "Publisher support operators access the MRG via customer-approved, time-bound Just-In-Time elevation.",
+      "evidence": ["managed-app-doc:L78-L99"],
+      "confidence": "confirmed"
+    },
+    {
+      "id": "fact-icons",
+      "claim": "Official Microsoft Azure and product icons are verified and rendered from the verified icon catalog.",
+      "evidence": ["managed-app-doc:L18-L30"],
+      "confidence": "confirmed"
+    }
+  ],
+  "assumptions": [],
+  "exclusions": [
+    "Payroll execution and automated banking transfers are out of scope."
+  ]
+}

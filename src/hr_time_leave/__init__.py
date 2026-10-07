@@ -1,5 +1,10 @@
 """Domain foundation for HR time and leave ticket workflows."""
 
+from hr_time_leave.app import (
+    app,
+    application,
+    process_bot_activity,
+)
 from hr_time_leave.domain import (
     CERTIFIED_MEDICAL_LEAVE_STATUS,
     InvalidTransitionError,
@@ -16,6 +21,9 @@ from hr_time_leave.domain import (
     transition_ticket,
     validate_ticket,
     validate_ticket_payload,
+)
+from hr_time_leave.function_app import (
+    process_service_bus_message,
 )
 from hr_time_leave.manager_cards import (
     ADAPTIVE_CARD_VERSION,
@@ -123,6 +131,8 @@ __all__ = [
     "TicketStore",
     "TicketType",
     "UnsupportedManagerActionError",
+    "app",
+    "application",
     "build_manager_approval_card",
     "create_default_policy_engine",
     "create_default_sla_engine",
@@ -132,6 +142,8 @@ __all__ = [
     "handle_manager_action",
     "load_policy_file",
     "parse_policy_document",
+    "process_bot_activity",
+    "process_service_bus_message",
     "submit_ticket",
     "transition_ticket",
     "validate_ticket",

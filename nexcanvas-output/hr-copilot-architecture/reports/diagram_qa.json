@@ -1,0 +1,55 @@
+{
+  "ok": false,
+  "counts": {
+    "error": 4,
+    "warning": 3,
+    "info": 0
+  },
+  "issues": [
+    {
+      "severity": "error",
+      "code": "intent-scope",
+      "message": "A architecture view requires at least two meaningful nodes.",
+      "location": "nodes"
+    },
+    {
+      "severity": "error",
+      "code": "architecture-structure",
+      "message": "Architecture views require at least one relationship or meaningful boundary.",
+      "location": "edges"
+    },
+    {
+      "severity": "error",
+      "code": "c4-element",
+      "message": "c4-container needs its notation-specific C4 element type.",
+      "location": "profile"
+    },
+    {
+      "severity": "warning",
+      "code": "c4-technology",
+      "message": "C4 container/component nodes should state their technology.",
+      "location": "nodes"
+    },
+    {
+      "severity": "warning",
+      "code": "reference-phases",
+      "message": "Reference-architecture views usually need at least three named phase columns.",
+      "location": "boundaries"
+    },
+    {
+      "severity": "error",
+      "code": "reference-official-icons",
+      "message": "Official provider icons are required for service-icon nodes: system.",
+      "location": "nodes"
+    }
+  ],
+  "schemaVersion": "2.0",
+  "checkedAt": "2026-10-05T08:47:26Z",
+  "geometry": {
+    "profile": "composition",
+    "errors": [],
+    "warnings": [
+      "Tagged primary content spans only 11.5% of canvas width; target at least 70% or reduce the canvas."
+    ]
+  }
+}

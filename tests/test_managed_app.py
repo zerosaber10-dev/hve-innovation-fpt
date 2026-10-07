@@ -20,6 +20,7 @@ from packaging.managed_app.package_managed_app import (
     create_managed_app_package,
     scan_file_for_secrets,
     scan_text_for_secrets,
+    validate_container_configuration,
     validate_create_ui_definition,
     validate_parameter_parity,
     validate_template_json,
@@ -284,3 +285,79 @@ class TestManagedAppPackaging:
         assert is_valid, f"mainTemplate errors: {errors}"
         assert data.get("contentVersion") == "1.0.0.0"
         assert "resources" in data
+
+
+class TestAppServiceContainerDeployment:
+    """Validate App Service container deployment configuration in ARM template."""
+
+    def test_given_main_template_then_app_service_configures_docker_container(
+        self,
+    ) -> None:
+        template_data = json.loads(MAIN_TEMPLATE_PATH.read_text(encoding="utf-8"))
+        is_valid, errors = validate_container_configuration(template_data)
+        assert is_valid, f"Container validation errors: {errors}"
+        assert len(errors) == 0
+
+    def test_given_main_template_then_app_service_resource_has_expected_site_config(
+        self,
+    ) -> None:
+        template_data = json.loads(MAIN_TEMPLATE_PATH.read_text(encoding="utf-8"))
+        resources = template_data.get("resources", [])
+        app_service = next(
+            (
+                r
+                for r in resources
+                if r.get("type") == "Microsoft.Web/sites"
+                and r.get("kind") == "app,linux"
+            ),
+            None,
+        )
+        assert app_service is not None, "App Service resource (kind app,linux) missing"
+        site_config = app_service.get("properties", {}).get("siteConfig", {})
+        linux_fx = site_config.get("linuxFxVersion", "")
+        assert "DOCKER|" in linux_fx
+
+        app_settings = site_config.get("appSettings", [])
+        settings_map = {s["name"]: s["value"] for s in app_settings}
+
+        assert settings_map.get("WEBSITES_PORT") == "8000"
+        assert settings_map.get("WEBSITES_CONTAINER_START_TIME_LIMIT") == "600"
+        assert settings_map.get("WEBSITES_ENABLE_APP_SERVICE_STORAGE") == "false"
+
+    def test_given_invalid_container_config_when_validated_then_detects_errors(
+        self,
+    ) -> None:
+        invalid_template = {
+            "resources": [
+                {
+                    "type": "Microsoft.Web/sites",
+                    "kind": "app,linux",
+                    "properties": {
+                        "siteConfig": {
+                            "linuxFxVersion": "PYTHON|3.11",
+                            "appSettings": [],
+                        }
+                    },
+                }
+            ]
+        }
+        is_valid, errors = validate_container_configuration(invalid_template)
+        assert not is_valid
+        assert any("DOCKER" in err for err in errors)
+        assert any("WEBSITES_PORT" in err for err in errors)
+
+    def test_given_missing_app_service_when_validated_then_returns_error(
+        self,
+    ) -> None:
+        template_without_app = {
+            "resources": [
+                {
+                    "type": "Microsoft.Web/sites",
+                    "kind": "functionapp,linux",
+                    "properties": {},
+                }
+            ]
+        }
+        is_valid, errors = validate_container_configuration(template_without_app)
+        assert not is_valid
+        assert any("No App Service resource" in err for err in errors)

@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "template": "infra\\mainTemplate.json",
+  "ui_definition": "infra\\createUiDefinition.json",
+  "outputs_mapped": 8,
+  "container_validation": "PASS",
+  "secrets_detected": 0,
+  "package": "packaging\\managed_app\\app.zip",
+  "package_size_bytes": 6465
+}

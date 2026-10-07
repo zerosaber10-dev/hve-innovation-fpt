@@ -308,7 +308,7 @@ class TestAzureBicepArchitectureCompliance:
 
         # 7. Cognitive Services / Azure OpenAI
         assert "Microsoft.CognitiveServices/accounts" in bicep_content
-        assert "'gpt-4o'" in bicep_content
+        assert "'gpt-6-luna'" in bicep_content
         assert "'text-embedding-3-small'" in bicep_content
 
         # 8. Storage Account (Policy Documents)

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": "1.0",
+  "pipelineVersion": "1.0.0",
+  "projectRoot": ".",
+  "status": "failed",
+  "currentStage": "diagram-qa",
+  "updatedAt": "2026-10-05T08:47:26Z",
+  "stages": {
+    "plan": {
+      "status": "complete",
+      "attempts": 1,
+      "inputHash": "10e517993ee6f25aff083a195d4655fbc1a76da102089e69ea26fa9f23199c06",
+      "inputs": {
+        "diagram_model.json": "273460c9c6eb0e88c1ace8b7fb02a7bedc4ebd26afc2961cdd5614f8e0df181f",
+        "@pipelineVersion": "39fe4a40977d0585fd5704359e3685b0ada5cf5ee061e5d97385601d120cd0ec"
+      },
+      "dependencies": {},
+      "startedAt": "2026-10-05T08:47:25Z",
+      "outputs": {
+        "reports/layout_brainstorm.json": {
+          "sha256": "1fa810d4b05268a663a29290fd1b6824ffadab70b554ebac74160deeaa219547",
+          "bytes": 1587
+        }
+      },
+      "outputHash": "d74f18591c8357261cfdea13c2483ae3f6c8ad48a82c811ee9a0681144406503",
+      "result": {
+        "ok": true,
+        "winner": null
+      },
+      "completedAt": "2026-10-05T08:47:25Z"
+    },
+    "build": {
+      "status": "complete",
+      "attempts": 1,
+      "inputHash": "7e68aad16d5ce9e8be56161ee8939ab4eff40711f73b432f15362fe3ee2fa5ba",
+      "inputs": {
+        "diagram_model.json": "273460c9c6eb0e88c1ace8b7fb02a7bedc4ebd26afc2961cdd5614f8e0df181f",
+        "@pipelineVersion": "39fe4a40977d0585fd5704359e3685b0ada5cf5ee061e5d97385601d120cd0ec",
+        "@extensions": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "@effectiveAssets": "841fa738b230eec05a3de75841965b4b74b3295c3a87f991d45540633ad3c8c9"
+      },
+      "dependencies": {
+        "plan": "d74f18591c8357261cfdea13c2483ae3f6c8ad48a82c811ee9a0681144406503"
+      },
+      "startedAt": "2026-10-05T08:47:25Z",
+      "outputs": {
+        "artifacts/diagram.drawio": {
+          "sha256": "25a3c9f49f1730c6d8aafc0184b6cf07d05a1f1b6c7c39d7c95bec8608c91e93",
+          "bytes": 1768
+        },
+        "reports/build.json": {
+          "sha256": "e0d9f2812b0fdfa28542976f5e7054b1aa539df4dfee040a7375c4f41de58bb9",
+          "bytes": 338
+        }
+      },
+      "outputHash": "696c1acc718be9a8c279f2795a028e071177eff48953ac8fa31123c64a796213",
+      "result": {
+        "ok": true,
+        "nodes": 1,
+        "edges": 0
+      },
+      "completedAt": "2026-10-05T08:47:26Z"
+    },
+    "diagram-qa": {
+      "status": "failed",
+      "attempts": 1,
+      "inputHash": "11828f6e09a2f39b6ade618162381130e7204fc18a515d08d7564ef01cd74f39",
+      "inputs": {
+        "source_model.json": "933376c8c105746e57f852fe0c81cd54fc016d8bbdfad2260e48668054031c02",
+        "diagram_lock.json": "6b608d8ff246f71ac5d694bfff2a0f490bbf0b24c9f3b10f0e9f3c25edb85a91",
+        "diagram_model.json": "273460c9c6eb0e88c1ace8b7fb02a7bedc4ebd26afc2961cdd5614f8e0df181f",
+        "artifacts/diagram.drawio": "25a3c9f49f1730c6d8aafc0184b6cf07d05a1f1b6c7c39d7c95bec8608c91e93",
+        "@pipelineVersion": "39fe4a40977d0585fd5704359e3685b0ada5cf5ee061e5d97385601d120cd0ec",
+        "@extensions": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "@effectiveAssets": "841fa738b230eec05a3de75841965b4b74b3295c3a87f991d45540633ad3c8c9",
+        "@qaOptions": "b1ad0dd3d6e71e77eda68ed4e77e88c8dfa630f91e39af33ff75a5b365ef1692"
+      },
+      "dependencies": {
+        "build": "696c1acc718be9a8c279f2795a028e071177eff48953ac8fa31123c64a796213"
+      },
+      "startedAt": "2026-10-05T08:47:26Z",
+      "outputs": {
+        "reports/diagram_qa.json": {
+          "sha256": "9564f2b516696a8a03e8e9a7eec26ad7e6653406cc2534e08226213fab698f71",
+          "bytes": 1502
+        }
+      },
+      "outputHash": "52502b14ee98376861612d2528a95d813bf010cdbdbfcddbe9ef060de288a684",
+      "result": {
+        "ok": false,
+        "counts": {
+          "error": 4,
+          "warning": 3,
+          "info": 0
+        },
+        "failOnWarning": true
+      },
+      "completedAt": "2026-10-05T08:47:26Z"
+    },
+    "render": {
+      "status": "stale",
+      "attempts": 0,
+      "invalidatedAt": "2026-10-05T08:47:26Z",
+      "invalidationReason": "Upstream stage 'diagram-qa' failed."
+    },
+    "visual-qa": {
+      "status": "pending",
+      "attempts": 0
+    },
+    "postflight": {
+      "status": "pending",
+      "attempts": 0
+    }
+  }
+}

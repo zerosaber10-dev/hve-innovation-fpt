@@ -1,4 +1,4 @@
-﻿<!-- markdownlint-disable-file -->
+<!-- markdownlint-disable-file -->
 ---
 title: "Enterprise Adaptive HR Copilot Architecture Notes"
 description: "Planned architecture, trust boundaries, Well-Architected review, and Marketplace publication boundaries for the HR Copilot"
@@ -42,7 +42,7 @@ Ticket state and audit events are stored separately from conversation memory in 
 | Internal MCP server | Expose a bounded, validated tool surface to orchestration | Apply tool allowlists, argument schemas, identity checks, authorization, idempotency, and audit hooks |
 | HRIS MCP connector | Read balances and employee/job/reporting data; submit supported updates | Treat HRIS as an external system of record; handle stale data, throttling, and partial failure explicitly |
 | Microsoft Graph MCP connector | Resolve directory identity and direct-report relationships | Enforce direct-report scope server-side; do not rely on client filtering |
-| Azure AI Foundry | Provide model deployments and content moderation | Moderation is one defense, not a substitute for data minimization, authorization, output filtering, or safe logging |
+| Azure AI Foundry | Provide model deployments (`gpt-6-luna` for policy synthesis and reasoning, `text-embedding-3-small` for embeddings) and content moderation | Moderation is one defense, not a substitute for data minimization, authorization, output filtering, or safe logging |
 | Azure AI Search | Retrieve policy documents using hybrid BM25 and vector search with semantic reranking | Filter by tenant, region, policy version, and effective date before retrieval; return citations and source metadata |
 | Azure Storage Account | Store approved source policy documents for indexing | Restrict write access to policy publishers; preserve version/effective-date metadata and protect documents in transit and at rest |
 | Cosmos DB, ticket and audit data | Persist ticket lifecycle state and audit events | Separate access paths; enforce append-only audit writes and tamper evidence because a Cosmos DB collection alone is not immutable |
@@ -57,7 +57,7 @@ Ticket state and audit events are stored separately from conversation memory in 
 1. An employee or manager interacts with the Copilot in Teams. Azure Bot Service forwards activity and authenticated user context to the App Service.
 2. The App Service validates the token context and performs OBO token exchange with Entra ID for the least-privilege downstream access required by the operation.
 3. LangGraph classifies the workflow intent and invokes policy retrieval or ticket tools. The model may propose a response or identify a request flow; deterministic application logic owns validation and state transitions.
-4. For policy Q&A, orchestration queries Azure AI Search. Search retrieves policy chunks from indexed Storage content using hybrid BM25 and vector search with semantic reranking, applies tenant and effective-policy filters, and returns citations. Azure AI Foundry generates a response from retrieved evidence and applies configured moderation. Unsupported or conflicting answers route to HR rather than fabricating policy.
+4. For policy Q&A, orchestration queries Azure AI Search. Search retrieves policy chunks from indexed Storage content using hybrid BM25 and vector search with semantic reranking, applies tenant and effective-policy filters, and returns citations. Azure AI Foundry generates a response from retrieved evidence using the core `gpt-6-luna` model and applies configured moderation. Unsupported or conflicting answers route to HR rather than fabricating policy.
 5. For ticket requests, the MCP server validates tool arguments and the caller's role, checks balance and policy conditions through the HRIS connector, then writes the ticket to ticket Cosmos DB. The ticket begins in the specified draft or pending state. A Teams actionable card is sent to the authorized direct manager.
 6. Manager actions arrive through Teams and are re-authorized against the current ticket state and direct-report relationship. Approve, Reject, and Request Info are recorded as attributed actions. Rejection requires a reason. Stale or replayed actions fail safely.
 7. The App Service schedules SLA messages in Service Bus. Functions consume due messages, re-check ticket state, dispatch the 48-hour reminder or 72-hour HR escalation, and append audit events. The HR queue exposes the overdue ticket to authorized HR administrators.
@@ -231,7 +231,7 @@ Connects Teams activities to the agent backend`")
 Runs agent orchestration and internal tool server`")
             ctr_ai_foundry("`**Azure AI Foundry**
 *[Container]*
-Hosts model deployments and content moderation`")
+Hosts gpt-6-luna and embedding model deployments and content moderation`")
             ctr_ai_search("`**Azure AI Search**
 *[Container]*
 Indexes and retrieves policy content with hybrid search and semantic reranking`")
@@ -328,7 +328,7 @@ Resolves directory and manager scope`")
     subgraph layout_bottom[" "]
         ctr_ai_foundry("`**Azure AI Foundry**
 *[Container]*
-Model deployments and moderation`")
+gpt-6-luna and embedding model deployments and moderation`")
         ctr_ai_search("`**Azure AI Search**
 *[Container]*
 Hybrid policy retrieval with semantic reranking`")
@@ -419,7 +419,7 @@ This is a preliminary design review against Security, Reliability, Cost Optimiza
 ### Cost Optimization
 
 * Main variable cost drivers are Foundry token and moderation usage, Search indexing/query/vector capacity, Cosmos DB throughput and storage, Storage retention, and Bot/App Service/Functions/Service Bus runtime.
-* Use a small model for routing or extraction where quality is sufficient; call stronger models only for policy explanation or difficult ambiguity. Set bounded context sizes, summarize non-sensitive conversation state, cache policy retrieval by policy version, and avoid repeated retrieval on follow-up turns.
+* Use a small model for routing or extraction where quality is sufficient; call stronger models (`gpt-6-luna`) only for policy explanation or complex reasoning. Set bounded context sizes, summarize non-sensitive conversation state, cache policy retrieval by policy version, and avoid repeated retrieval on follow-up turns.
 * Size Search and Cosmos from measured query and ticket volume. Start with autoscaling or serverless options only after checking latency and unit economics; isolate high-volume tenants where noisy-neighbor limits require it.
 * Add per-tenant budgets and alerts for tokens, search, Cosmos RU/s, and message volume. Meter by completed task and avoid recording sensitive prompts in cost telemetry.
 * Compare Azure Marketplace Managed Application delivery costs and support obligations with a vendor-operated SaaS model before choosing the commercial deployment boundary.

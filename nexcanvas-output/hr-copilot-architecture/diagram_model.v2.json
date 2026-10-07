@@ -1,0 +1,520 @@
+{
+  "schemaVersion": "2.0",
+  "title": "Enterprise HR Time and Leave Copilot Architecture",
+  "subtitle": "Azure Managed Application in Customer Subscription with Microsoft Teams Copilot Front Door",
+  "route": {
+    "family": "runtime-cloud",
+    "profile": "cloud-reference"
+  },
+  "visualArchetype": "provider-neutral-reference",
+  "layoutStrategy": "phase-columns",
+  "audience": "Enterprise Architecture & Cloud Security",
+  "deliveryTarget": "engineering-doc",
+  "language": "en",
+  "theme": "technical-editorial",
+  "direction": "LR",
+  "canvas": {
+    "width": 1920,
+    "height": 1080
+  },
+  "boundaries": [
+    {
+      "id": "b_client",
+      "label": "1. Microsoft 365 Client Surface",
+      "kind": "phase-column",
+      "presentation": "phase-column",
+      "weight": 1.0,
+      "order": 1
+    },
+    {
+      "id": "b_mrg",
+      "label": "2. Customer Subscription \u00c2\u00b7 Managed Resource Group (MRG - Deny Assignment)",
+      "kind": "phase-column",
+      "presentation": "phase-column",
+      "weight": 2.6,
+      "order": 2
+    },
+    {
+      "id": "b_ext",
+      "label": "3. Enterprise Identity & Systems of Record",
+      "kind": "phase-column",
+      "presentation": "phase-column",
+      "weight": 1.0,
+      "order": 3
+    },
+    {
+      "id": "b_pub",
+      "label": "4. Publisher Operations \u00c2\u00b7 Zero Standing Access (Customer-Approved JIT Elevation)",
+      "kind": "foundation-band",
+      "presentation": "foundation-band",
+      "order": 4
+    }
+  ],
+  "nodes": [
+    {
+      "id": "u_emp",
+      "label": "Employees & Line Managers",
+      "kind": "actor",
+      "boundary": "b_client",
+      "importance": "secondary",
+      "technology": "Teams Desktop / Mobile / Web",
+      "evidence": [
+        "fact-teams-surface"
+      ],
+      "layout": {
+        "order": 1
+      },
+      "presentation": "service-icon",
+      "assetRef": "employees-managers"
+    },
+    {
+      "id": "m365_teams",
+      "label": "Microsoft Teams Client",
+      "kind": "interface",
+      "boundary": "b_client",
+      "importance": "primary",
+      "technology": "Adaptive Cards v1.5",
+      "description": "Conversational UI & Card Approvals",
+      "evidence": [
+        "fact-teams-surface"
+      ],
+      "layout": {
+        "order": 2
+      },
+      "presentation": "service-icon",
+      "assetRef": "microsoft-teams"
+    },
+    {
+      "id": "bot_svc",
+      "label": "Azure Bot Service",
+      "kind": "gateway",
+      "boundary": "b_client",
+      "importance": "primary",
+      "technology": "Bot Framework Webhook",
+      "description": "Activity Routing & Token Forwarding",
+      "evidence": [
+        "fact-teams-surface"
+      ],
+      "layout": {
+        "order": 3
+      },
+      "presentation": "service-tile",
+      "assetRef": "azure-bot-service"
+    },
+    {
+      "id": "app_svc",
+      "label": "Azure App Service (LangGraph)",
+      "kind": "compute",
+      "boundary": "b_mrg",
+      "importance": "primary",
+      "technology": "Linux Python 3.11 / FastAPI",
+      "description": "Deterministic State Machine & Internal MCP Server",
+      "evidence": [
+        "fact-app-service"
+      ],
+      "layout": {
+        "order": 1
+      },
+      "presentation": "service-icon",
+      "assetRef": "azure-app-service"
+    },
+    {
+      "id": "ai_foundry",
+      "label": "Azure AI Foundry (GPT-4o)",
+      "kind": "model",
+      "boundary": "b_mrg",
+      "importance": "primary",
+      "technology": "gpt-4o & text-embedding-3-small",
+      "description": "Intent Extraction & Grounded Policy Synthesis",
+      "evidence": [
+        "fact-ai-foundry"
+      ],
+      "layout": {
+        "order": 2
+      }
+    },
+    {
+      "id": "ai_search",
+      "label": "Azure AI Search",
+      "kind": "database",
+      "boundary": "b_mrg",
+      "importance": "primary",
+      "technology": "Hybrid BM25 + Vector Search",
+      "description": "Grounded SOP Policy Retrieval & Citations",
+      "evidence": [
+        "fact-ai-search"
+      ],
+      "layout": {
+        "order": 3
+      }
+    },
+    {
+      "id": "cosmos_db",
+      "label": "Azure Cosmos DB (NoSQL)",
+      "kind": "database",
+      "boundary": "b_mrg",
+      "importance": "primary",
+      "technology": "Dedicated Cosmos Containers",
+      "description": "hr-ticket-store & hr-conversation-memory",
+      "evidence": [
+        "fact-cosmos"
+      ],
+      "layout": {
+        "order": 4
+      }
+    },
+    {
+      "id": "service_bus",
+      "label": "Azure Service Bus",
+      "kind": "queue",
+      "boundary": "b_mrg",
+      "importance": "secondary",
+      "technology": "Standard Messaging Queue",
+      "description": "hr-sla-jobs (Duplicate Detection)",
+      "evidence": [
+        "fact-service-bus"
+      ],
+      "layout": {
+        "order": 5
+      }
+    },
+    {
+      "id": "func_sla",
+      "label": "Azure Functions (SLA Engine)",
+      "kind": "compute",
+      "boundary": "b_mrg",
+      "importance": "primary",
+      "technology": "Serverless Python 3.11",
+      "description": "48h Reminders & 72h HR Queue Escalations",
+      "evidence": [
+        "fact-sla-functions"
+      ],
+      "layout": {
+        "order": 6
+      }
+    },
+    {
+      "id": "key_vault",
+      "label": "Azure Key Vault",
+      "kind": "vault",
+      "boundary": "b_mrg",
+      "importance": "secondary",
+      "technology": "Managed Identity RBAC",
+      "description": "Zero Secrets & Certificate Storage",
+      "evidence": [
+        "fact-security"
+      ],
+      "layout": {
+        "order": 7
+      }
+    },
+    {
+      "id": "app_insights",
+      "label": "Log Analytics & App Insights",
+      "kind": "telemetry",
+      "boundary": "b_mrg",
+      "importance": "secondary",
+      "technology": "Azure Monitor (Redacted)",
+      "description": "PII-Redacted Audit Logs & Metrics",
+      "evidence": [
+        "fact-telemetry"
+      ],
+      "layout": {
+        "order": 8
+      }
+    },
+    {
+      "id": "entra_id",
+      "label": "Microsoft Entra ID",
+      "kind": "identity",
+      "boundary": "b_ext",
+      "importance": "secondary",
+      "technology": "OAuth2 / OBO Tokens",
+      "description": "User Authentication & Token Exchange",
+      "evidence": [
+        "fact-external-connectors"
+      ],
+      "layout": {
+        "order": 1
+      }
+    },
+    {
+      "id": "ms_graph",
+      "label": "Microsoft Graph API",
+      "kind": "service",
+      "boundary": "b_ext",
+      "importance": "secondary",
+      "technology": "Graph REST API",
+      "description": "Direct Report Hierarchy Resolution",
+      "evidence": [
+        "fact-external-connectors"
+      ],
+      "layout": {
+        "order": 2
+      }
+    },
+    {
+      "id": "ext_hris",
+      "label": "Enterprise HRIS (Workday/SAP)",
+      "kind": "service",
+      "boundary": "b_ext",
+      "importance": "secondary",
+      "technology": "HRIS REST / OData",
+      "description": "Authoritative Leave Balances & History",
+      "evidence": [
+        "fact-external-connectors"
+      ],
+      "layout": {
+        "order": 3
+      },
+      "presentation": "service-tile",
+      "assetRef": "external-tools"
+    },
+    {
+      "id": "pub_ops",
+      "label": "Publisher Operations Team",
+      "kind": "actor",
+      "boundary": "b_pub",
+      "importance": "secondary",
+      "technology": "Partner Center Portal",
+      "description": "Support Engineers (Zero Standing Access)",
+      "evidence": [
+        "fact-jit-access"
+      ],
+      "layout": {
+        "order": 1
+      },
+      "presentation": "service-tile",
+      "assetRef": "publisher-operations"
+    },
+    {
+      "id": "jit_service",
+      "label": "Azure JIT Access Elevation",
+      "kind": "gateway",
+      "boundary": "b_pub",
+      "importance": "secondary",
+      "technology": "PIM Time-Bound RBAC",
+      "description": "Customer-Approved 4-Hour Reader Elevation",
+      "evidence": [
+        "fact-jit-access"
+      ],
+      "layout": {
+        "order": 2
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "u_emp",
+      "target": "m365_teams",
+      "kind": "sync",
+      "label": "interact via chat & cards",
+      "protocol": "Teams UI",
+      "evidence": [
+        "fact-teams-surface"
+      ],
+      "layout": {
+        "order": 1
+      }
+    },
+    {
+      "id": "e2",
+      "source": "m365_teams",
+      "target": "bot_svc",
+      "kind": "sync",
+      "label": "forward bot activity",
+      "protocol": "HTTPS",
+      "evidence": [
+        "fact-teams-surface"
+      ],
+      "layout": {
+        "order": 2
+      }
+    },
+    {
+      "id": "e3",
+      "source": "bot_svc",
+      "target": "app_svc",
+      "kind": "sync",
+      "label": "webhook activity",
+      "protocol": "HTTPS",
+      "evidence": [
+        "fact-teams-surface"
+      ],
+      "layout": {
+        "order": 3
+      }
+    },
+    {
+      "id": "e4",
+      "source": "app_svc",
+      "target": "ai_search",
+      "kind": "retrieval",
+      "label": "hybrid policy search",
+      "protocol": "REST",
+      "evidence": [
+        "fact-ai-search"
+      ],
+      "layout": {
+        "order": 4
+      }
+    },
+    {
+      "id": "e5",
+      "source": "app_svc",
+      "target": "ai_foundry",
+      "kind": "sync",
+      "label": "grounded generation (gpt-4o)",
+      "protocol": "OpenAI REST",
+      "evidence": [
+        "fact-ai-foundry"
+      ],
+      "layout": {
+        "order": 5
+      }
+    },
+    {
+      "id": "e6",
+      "source": "app_svc",
+      "target": "cosmos_db",
+      "kind": "write",
+      "label": "persist ticket & memory",
+      "protocol": "Cosmos SQL",
+      "evidence": [
+        "fact-cosmos"
+      ],
+      "layout": {
+        "order": 6
+      }
+    },
+    {
+      "id": "e7",
+      "source": "app_svc",
+      "target": "service_bus",
+      "kind": "async",
+      "label": "schedule SLA job",
+      "protocol": "AMQP",
+      "evidence": [
+        "fact-service-bus"
+      ],
+      "layout": {
+        "order": 7
+      }
+    },
+    {
+      "id": "e8",
+      "source": "service_bus",
+      "target": "func_sla",
+      "kind": "async",
+      "label": "trigger due SLA job",
+      "protocol": "Queue Trigger",
+      "evidence": [
+        "fact-sla-functions"
+      ],
+      "layout": {
+        "order": 8
+      }
+    },
+    {
+      "id": "e9",
+      "source": "func_sla",
+      "target": "cosmos_db",
+      "kind": "write",
+      "label": "escalate overdue ticket",
+      "protocol": "Cosmos SQL",
+      "evidence": [
+        "fact-sla-functions"
+      ],
+      "layout": {
+        "order": 9
+      }
+    },
+    {
+      "id": "e10",
+      "source": "app_svc",
+      "target": "entra_id",
+      "kind": "sync",
+      "label": "token exchange (OBO)",
+      "protocol": "OAuth2 OBO",
+      "evidence": [
+        "fact-external-connectors"
+      ],
+      "layout": {
+        "order": 10
+      }
+    },
+    {
+      "id": "e11",
+      "source": "app_svc",
+      "target": "ms_graph",
+      "kind": "read",
+      "label": "resolve direct reports",
+      "protocol": "Graph REST",
+      "evidence": [
+        "fact-external-connectors"
+      ],
+      "layout": {
+        "order": 11
+      }
+    },
+    {
+      "id": "e12",
+      "source": "app_svc",
+      "target": "ext_hris",
+      "kind": "read",
+      "label": "verify leave balances",
+      "protocol": "HRIS API",
+      "evidence": [
+        "fact-external-connectors"
+      ],
+      "layout": {
+        "order": 12
+      }
+    },
+    {
+      "id": "e13",
+      "source": "pub_ops",
+      "target": "jit_service",
+      "kind": "sync",
+      "label": "request elevation",
+      "protocol": "Partner Center",
+      "evidence": [
+        "fact-jit-access"
+      ],
+      "layout": {
+        "order": 13
+      }
+    },
+    {
+      "id": "e14",
+      "source": "jit_service",
+      "target": "app_svc",
+      "kind": "sync",
+      "label": "JIT role elevation",
+      "protocol": "Azure RBAC",
+      "evidence": [
+        "fact-jit-access"
+      ],
+      "layout": {
+        "order": 14
+      }
+    }
+  ],
+  "legend": [
+    {
+      "kind": "sync",
+      "label": "Synchronous Request / API"
+    },
+    {
+      "kind": "async",
+      "label": "Asynchronous Message / Queue"
+    },
+    {
+      "kind": "retrieval",
+      "label": "Hybrid Policy Retrieval"
+    }
+  ],
+  "sourceSnapshot": "source_model.json",
+  "assumptions": []
+}

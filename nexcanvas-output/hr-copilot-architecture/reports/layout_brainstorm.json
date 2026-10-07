@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0",
+  "metrics": {
+    "nodes": 1,
+    "edges": 0,
+    "boundaries": 0,
+    "phases": 0,
+    "nestedBoundaries": 0,
+    "containmentRatio": 0.0,
+    "maxNodesPerPhase": 0,
+    "crossBoundaryEdges": 0,
+    "crossBoundaryRatio": 0.0,
+    "feedbackEdges": 0,
+    "aspectRatio": 1.778,
+    "topologyTerms": [],
+    "branchNodes": 0,
+    "cycleDetected": false,
+    "longestPath": 1,
+    "maxDegree": 0,
+    "hubScore": 0.0
+  },
+  "candidates": [
+    {
+      "strategy": "compact-pipeline",
+      "score": 6.0,
+      "reasons": [
+        "+4.0: ten or fewer nodes",
+        "+2.0: low branching"
+      ]
+    },
+    {
+      "strategy": "phase-columns",
+      "score": 0.0,
+      "reasons": []
+    },
+    {
+      "strategy": "dense-phase-columns",
+      "score": 0.0,
+      "reasons": []
+    },
+    {
+      "strategy": "phase-rows",
+      "score": 0.0,
+      "reasons": []
+    },
+    {
+      "strategy": "hybrid-grid",
+      "score": 0.0,
+      "reasons": []
+    },
+    {
+      "strategy": "hub-and-spoke",
+      "score": 0.0,
+      "reasons": []
+    },
+    {
+      "strategy": "nested-topology",
+      "score": 0.0,
+      "reasons": []
+    }
+  ],
+  "automaticRecommendation": "compact-pipeline",
+  "selectedStrategy": "compact-pipeline",
+  "selectionSource": "automatic",
+  "geometryPlan": {
+    "orientation": "landscape",
+    "phaseWeights": {},
+    "phaseTreatment": "outline",
+    "foundationBand": false,
+    "reservedRails": [],
+    "stepPolicy": "badge primary handoffs; suffix parallel substeps; leave context edges unnumbered"
+  },
+  "manualReviewRisks": []
+}
