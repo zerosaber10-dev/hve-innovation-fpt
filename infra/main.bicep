@@ -34,7 +34,7 @@ param searchSku string = 'standard'
 param existingOpenAiEndpoint string = ''
 
 @description('Container image repository and tag for the HR Copilot App Service.')
-param containerImage string = 'mcr.microsoft.com/azure-app-service/python:3.11'
+param containerImage string = 'ghcr.io/zerosaber10-dev/hr-time-leave-agent:latest'
 
 @description('Tags to apply to all resources.')
 param tags object = {
@@ -386,7 +386,7 @@ resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   parent: cognitiveService
   name: 'text-embedding-3-small'
   sku: {
-    name: 'Standard'
+    name: 'GlobalStandard'
     capacity: 20
   }
   properties: {

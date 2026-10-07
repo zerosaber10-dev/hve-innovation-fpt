@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.47.16.16243",
-      "templateHash": "7331809131156201653"
+      "templateHash": "2007205132939799544"
     }
   },
   "parameters": {
@@ -78,7 +78,7 @@
     },
     "containerImage": {
       "type": "string",
-      "defaultValue": "mcr.microsoft.com/azure-app-service/python:3.11",
+      "defaultValue": "ghcr.io/zerosaber10-dev/hr-time-leave-agent:latest",
       "metadata": {
         "description": "Container image repository and tag for the HR Copilot App Service."
       }
@@ -452,7 +452,7 @@
       "apiVersion": "2024-10-01",
       "name": "[format('{0}/{1}', variables('names').cognitiveService, 'text-embedding-3-small')]",
       "sku": {
-        "name": "Standard",
+        "name": "GlobalStandard",
         "capacity": 20
       },
       "properties": {
