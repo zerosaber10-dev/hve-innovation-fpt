@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.47.16.16243",
-      "templateHash": "1171043900192433623"
+      "templateHash": "2007205132939799544"
     }
   },
   "parameters": {
@@ -452,7 +452,7 @@
       "apiVersion": "2024-10-01",
       "name": "[format('{0}/{1}', variables('names').cognitiveService, 'text-embedding-3-small')]",
       "sku": {
-        "name": "Standard",
+        "name": "GlobalStandard",
         "capacity": 20
       },
       "properties": {

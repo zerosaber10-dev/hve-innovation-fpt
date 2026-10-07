@@ -386,7 +386,7 @@ resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   parent: cognitiveService
   name: 'text-embedding-3-small'
   sku: {
-    name: 'Standard'
+    name: 'GlobalStandard'
     capacity: 20
   }
   properties: {
