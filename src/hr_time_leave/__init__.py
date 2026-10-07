@@ -3,6 +3,7 @@
 from hr_time_leave.app import (
     app,
     application,
+    generate_agent_response,
     process_bot_activity,
 )
 from hr_time_leave.domain import (
@@ -23,6 +24,7 @@ from hr_time_leave.domain import (
     validate_ticket_payload,
 )
 from hr_time_leave.function_app import (
+    hr_sla_service_bus_handler,
     process_service_bus_message,
 )
 from hr_time_leave.manager_cards import (
@@ -137,9 +139,11 @@ __all__ = [
     "create_default_policy_engine",
     "create_default_sla_engine",
     "generate_action_token",
+    "generate_agent_response",
     "get_default_action_token_store",
     "handle_card_action_payload",
     "handle_manager_action",
+    "hr_sla_service_bus_handler",
     "load_policy_file",
     "parse_policy_document",
     "process_bot_activity",

@@ -49,6 +49,7 @@ param tags object = {
 // ---------------------------------------------------------------------------
 var uniqueSuffix = uniqueString(resourceGroup().id)
 var cleanPrefix = toLower(replace(appNamePrefix, '-', ''))
+var effectiveEntraTenantId = empty(entraTenantId) ? tenant().tenantId : entraTenantId
 
 var names = {
   logAnalytics: '${appNamePrefix}-${environmentName}-log-${uniqueSuffix}'
@@ -173,7 +174,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
       family: 'A'
       name: 'standard'
     }
-    tenantId: entraTenantId
+    tenantId: effectiveEntraTenantId
     enableRbacAuthorization: true
     enableSoftDelete: true
     softDeleteRetentionInDays: 90
@@ -196,7 +197,7 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2024-05-15' = {
   properties: {
     databaseAccountOfferType: 'Standard'
     disableKeyBasedMetadataWriteAccess: true
-    disableLocalAuth: false
+    disableLocalAuth: true
     consistencyPolicy: {
       defaultConsistencyLevel: 'Session'
     }
@@ -318,7 +319,7 @@ resource searchService 'Microsoft.Search/searchServices@2023-11-01' = {
 // ---------------------------------------------------------------------------
 // 6. Azure Service Bus: Asynchronous SLA Timers & Escalations (FR-004, NFR-002, NFR-004)
 // ---------------------------------------------------------------------------
-resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2022-10-01-preview' = {
+resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2021-11-01' = {
   name: names.serviceBusNamespace
   location: location
   tags: tags
@@ -327,12 +328,11 @@ resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2022-10-01-preview
     tier: 'Standard'
   }
   properties: {
-    minimumTlsVersion: '1.2'
     disableLocalAuth: true
   }
 }
 
-resource slaQueue 'Microsoft.ServiceBus/namespaces/queues@2022-10-01-preview' = {
+resource slaQueue 'Microsoft.ServiceBus/namespaces/queues@2021-11-01' = {
   parent: serviceBusNamespace
   name: 'hr-sla-jobs'
   properties: {
@@ -370,14 +370,14 @@ resource gptDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10
   parent: cognitiveService
   name: 'gpt-6-luna'
   sku: {
-    name: 'Standard'
+    name: 'GlobalStandard'
     capacity: 20
   }
   properties: {
     model: {
       format: 'OpenAI'
       name: 'gpt-6-luna'
-      version: '2026-preview'
+      version: '2026-09-22'
     }
   }
 }
@@ -443,7 +443,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'AZURE_TENANT_ID'
-          value: entraTenantId
+          value: effectiveEntraTenantId
         }
         {
           name: 'COSMOS_DB_ENDPOINT'
@@ -476,6 +476,10 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'OPENAI_ENDPOINT'
           value: openAiResolvedEndpoint
+        }
+        {
+          name: 'OPENAI_DEPLOYMENT_NAME'
+          value: 'gpt-6-luna'
         }
         {
           name: 'STORAGE_ACCOUNT_BLOB_URL'
@@ -575,7 +579,7 @@ resource botService 'Microsoft.BotService/botServices@2022-09-15' = if (!empty(b
     endpoint: 'https://${appService.properties.defaultHostName}/api/messages'
     msaAppId: botAppId
     msaAppType: 'SingleTenant'
-    msaAppTenantId: entraTenantId
+    msaAppTenantId: effectiveEntraTenantId
     disableLocalAuth: true
   }
 }

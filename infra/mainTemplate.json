@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.47.16.16243",
-      "templateHash": "2984914821570803204"
+      "templateHash": "7331809131156201653"
     }
   },
   "parameters": {
@@ -99,6 +99,7 @@
   "variables": {
     "uniqueSuffix": "[uniqueString(resourceGroup().id)]",
     "cleanPrefix": "[toLower(replace(parameters('appNamePrefix'), '-', ''))]",
+    "effectiveEntraTenantId": "[if(empty(parameters('entraTenantId')), tenant().tenantId, parameters('entraTenantId'))]",
     "names": {
       "logAnalytics": "[format('{0}-{1}-log-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix'))]",
       "appInsights": "[format('{0}-{1}-appi-{2}', parameters('appNamePrefix'), parameters('environmentName'), variables('uniqueSuffix'))]",
@@ -228,7 +229,7 @@
           "family": "A",
           "name": "standard"
         },
-        "tenantId": "[parameters('entraTenantId')]",
+        "tenantId": "[variables('effectiveEntraTenantId')]",
         "enableRbacAuthorization": true,
         "enableSoftDelete": true,
         "softDeleteRetentionInDays": 90,
@@ -249,7 +250,7 @@
       "properties": {
         "databaseAccountOfferType": "Standard",
         "disableKeyBasedMetadataWriteAccess": true,
-        "disableLocalAuth": false,
+        "disableLocalAuth": true,
         "consistencyPolicy": {
           "defaultConsistencyLevel": "Session"
         },
@@ -377,7 +378,7 @@
     },
     {
       "type": "Microsoft.ServiceBus/namespaces",
-      "apiVersion": "2022-10-01-preview",
+      "apiVersion": "2021-11-01",
       "name": "[variables('names').serviceBusNamespace]",
       "location": "[parameters('location')]",
       "tags": "[parameters('tags')]",
@@ -386,13 +387,12 @@
         "tier": "Standard"
       },
       "properties": {
-        "minimumTlsVersion": "1.2",
         "disableLocalAuth": true
       }
     },
     {
       "type": "Microsoft.ServiceBus/namespaces/queues",
-      "apiVersion": "2022-10-01-preview",
+      "apiVersion": "2021-11-01",
       "name": "[format('{0}/{1}', variables('names').serviceBusNamespace, 'hr-sla-jobs')]",
       "properties": {
         "requiresDuplicateDetection": true,
@@ -432,14 +432,14 @@
       "apiVersion": "2024-10-01",
       "name": "[format('{0}/{1}', variables('names').cognitiveService, 'gpt-6-luna')]",
       "sku": {
-        "name": "Standard",
+        "name": "GlobalStandard",
         "capacity": 20
       },
       "properties": {
         "model": {
           "format": "OpenAI",
           "name": "gpt-6-luna",
-          "version": "2026-preview"
+          "version": "2026-09-22"
         }
       },
       "dependsOn": [
@@ -509,7 +509,7 @@
             },
             {
               "name": "AZURE_TENANT_ID",
-              "value": "[parameters('entraTenantId')]"
+              "value": "[variables('effectiveEntraTenantId')]"
             },
             {
               "name": "COSMOS_DB_ENDPOINT",
@@ -542,6 +542,10 @@
             {
               "name": "OPENAI_ENDPOINT",
               "value": "[variables('openAiResolvedEndpoint')]"
+            },
+            {
+              "name": "OPENAI_DEPLOYMENT_NAME",
+              "value": "gpt-6-luna"
             },
             {
               "name": "STORAGE_ACCOUNT_BLOB_URL",
@@ -659,7 +663,7 @@
         "endpoint": "[format('https://{0}/api/messages', reference(resourceId('Microsoft.Web/sites', variables('names').appService), '2023-12-01').defaultHostName)]",
         "msaAppId": "[parameters('botAppId')]",
         "msaAppType": "SingleTenant",
-        "msaAppTenantId": "[parameters('entraTenantId')]",
+        "msaAppTenantId": "[variables('effectiveEntraTenantId')]",
         "disableLocalAuth": true
       },
       "dependsOn": [

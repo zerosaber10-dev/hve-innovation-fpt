@@ -811,6 +811,11 @@ def _synthesize_grounded_answer(
     clean_clause = best_clause.strip() if best_clause else section.content.strip()
     clean_clause = re.sub(r"\*+", "", clean_clause).strip()
 
+    # If the matched clause is an introductory header ending with ':',
+    # provide full section content
+    if clean_clause.endswith(":") and section.content:
+        clean_clause = re.sub(r"\*+", "", section.content).strip()
+
     return (
         f"According to {section.document_id} version {section.version} "
         f"(Section {section.section_number}: {section.section_title}): {clean_clause}"
@@ -824,4 +829,8 @@ def create_default_policy_engine(
     engine = PolicyEngine()
     if policy_path is not None:
         engine.ingest_file(policy_path)
+    else:
+        bundled_sop = Path(__file__).parent / "policies" / "sop-hr-time-and-leave.md"
+        if bundled_sop.is_file():
+            engine.ingest_file(bundled_sop)
     return engine
