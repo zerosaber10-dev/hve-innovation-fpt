@@ -13,7 +13,9 @@ import json
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
+import azure.functions as func
 import pytest
 from starlette.testclient import TestClient
 
@@ -22,6 +24,8 @@ from hr_time_leave import (
     Ticket,
     TicketType,
     app,
+    generate_agent_response,
+    hr_sla_service_bus_handler,
     process_bot_activity,
     process_service_bus_message,
     submit_ticket,
@@ -243,6 +247,105 @@ class TestFunctionsServiceBusSLAHandler:
     ) -> None:
         with pytest.raises(ValueError, match="Invalid JSON"):
             process_service_bus_message("not-json-content")
+
+    def test_given_service_bus_trigger_when_invoked_then_executes_handler(
+        self,
+    ) -> None:
+        raw_payload = json.dumps(
+            {
+                "ticket_id": "TICK-SLA-TRIGGER",
+                "job_type": "REMINDER",
+            }
+        ).encode("utf-8")
+        msg = func.ServiceBusMessage(body=raw_payload)
+        # Should not raise exception
+        hr_sla_service_bus_handler(msg)
+
+
+class TestAgentResponseAndRAG:
+    """Validate conversational agent response generation and RAG policy grounding."""
+
+    def test_policy_question_returns_grounded_answer(
+        self,
+    ) -> None:
+        response = generate_agent_response(
+            "What is the advance notice requirement for 1-2 days annual leave?",
+            sender="Bob Employee",
+        )
+        assert "Bob Employee" in response
+        assert "48 hours" in response
+        assert "SOP-HR-042" in response
+
+    def test_casual_greeting_returns_welcoming_message(
+        self,
+    ) -> None:
+        response = generate_agent_response("hello", sender="Carol")
+        assert "Carol" in response
+        assert "HR Time and Leave Copilot" in response
+
+    def test_given_empty_query_when_generating_response_then_prompts_for_inquiry(
+        self,
+    ) -> None:
+        response = generate_agent_response("", sender="David")
+        assert "David" in response
+        assert "assist" in response
+
+    def test_given_azure_openai_mock_when_invoked_then_calls_completion(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        class MockChoice:
+            class MockMessage:
+                content = "Based on SOP-HR-042, please submit 48 hours in advance."
+            message = MockMessage()
+
+        class MockCompletion:
+            choices = [MockChoice()]
+
+        class MockChatCompletions:
+            def create(self, **kwargs: Any) -> MockCompletion:
+                assert kwargs.get("model") == "gpt-6-luna"
+                return MockCompletion()
+
+        class MockChat:
+            completions = MockChatCompletions()
+
+        class MockOpenAI:
+            def __init__(self, **kwargs: Any) -> None:
+                pass
+            chat = MockChat()
+
+        endpoint_url = "https://test-foundry.services.ai.azure.com/openai/v1"
+        monkeypatch.setenv("OPENAI_ENDPOINT", endpoint_url)
+        monkeypatch.setenv("OPENAI_DEPLOYMENT_NAME", "gpt-6-luna")
+        monkeypatch.setenv("OPENAI_API_KEY", "fake-test-key")
+        monkeypatch.setattr("openai.OpenAI", MockOpenAI)
+
+        result = generate_agent_response(
+            "How much notice for 1 day leave?", sender="Eve"
+        )
+        assert "Eve" in result
+        assert "48 hours in advance" in result
+
+
+class TestCORSConfiguration:
+    """Validate CORS headers and Microsoft Teams origin allowance."""
+
+    def test_given_teams_origin_when_options_preflight_then_allowed(
+        self, client: TestClient
+    ) -> None:
+        response = client.options(
+            "/api/messages",
+            headers={
+                "Origin": "https://teams.microsoft.com",
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+        assert response.status_code == 200
+        assert (
+            response.headers.get("access-control-allow-origin")
+            == "https://teams.microsoft.com"
+        )
+        assert response.headers.get("access-control-allow-credentials") == "true"
 
 
 class TestDockerfileCompliance:

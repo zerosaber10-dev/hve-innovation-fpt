@@ -62,7 +62,7 @@
             "type": "Microsoft.Common.TextBox",
             "label": "Entra Tenant ID",
             "defaultValue": "",
-            "toolTip": "Microsoft Entra ID tenant ID (GUID) for authentication.",
+            "toolTip": "Microsoft Entra ID tenant ID (GUID). If left blank, automatically inherits the deployment subscription tenant.",
             "constraints": {
               "required": false
             }
@@ -72,9 +72,11 @@
             "type": "Microsoft.Common.TextBox",
             "label": "Teams Bot App ID",
             "defaultValue": "",
-            "toolTip": "Application / Client ID for the Microsoft Teams Bot registration.",
+            "toolTip": "Application / Client ID (GUID) from Microsoft Entra App Registrations for the Teams Bot.",
             "constraints": {
-              "required": false
+              "required": true,
+              "regex": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+              "validationMessage": "Please provide a valid GUID for the Teams Bot Application ID."
             }
           },
           {

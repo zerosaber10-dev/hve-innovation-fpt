@@ -11,6 +11,8 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
+import azure.functions as func
+
 from hr_time_leave.sla import (
     SLAEngine,
     SLAJob,
@@ -20,6 +22,28 @@ from hr_time_leave.sla import (
 )
 
 logger = logging.getLogger("hr_time_leave.functions")
+
+# Azure Functions Python v2 Programming Model Application instance
+app = func.FunctionApp()
+
+
+@app.service_bus_queue_trigger(
+    arg_name="msg",
+    queue_name="hr-sla-jobs",
+    connection="SERVICE_BUS_CONNECTION",
+)
+def hr_sla_service_bus_handler(msg: func.ServiceBusMessage) -> None:
+    """Handle incoming SLA reminder and escalation messages from Service Bus."""
+    body = msg.get_body()
+    logger.info("Received Service Bus SLA message: %d bytes", len(body))
+    result = process_service_bus_message(body)
+    logger.info(
+        "Processed SLA message: job_id=%s, ticket_id=%s, action_taken=%s, status=%s",
+        result.get("job_id"),
+        result.get("ticket_id"),
+        result.get("action_taken"),
+        result.get("job_status"),
+    )
 
 
 def parse_message_payload(message: dict[str, Any] | str | bytes) -> dict[str, Any]:
