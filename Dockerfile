@@ -12,13 +12,13 @@ WORKDIR /app
 RUN groupadd -g 10001 appuser && \
     useradd -u 10001 -g appuser -s /bin/bash -m appuser
 
-# Copy project specification and install dependencies
+# Copy project specification and application source code
 COPY pyproject.toml /app/
+COPY src/ /app/src/
+
+# Install dependencies and application package
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir .
-
-# Copy application source code
-COPY src/ /app/src/
 
 # Assign ownership to non-root user
 RUN chown -R appuser:appuser /app
