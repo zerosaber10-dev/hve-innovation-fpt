@@ -6,5 +6,5 @@
   "container_validation": "PASS",
   "secrets_detected": 0,
   "package": "packaging\\managed_app\\app.zip",
-  "package_size_bytes": 6465
+  "package_size_bytes": 6606
 }
