@@ -271,3 +271,4 @@ flowchart LR
    * Complete the wizard to verify the Managed Application deploys cleanly end-to-end.
    * Verify `/healthz` returns `{"status":"healthy"}`.
 5. **Go Live**: In Partner Center, click **Go live** to make the offer publicly accessible worldwide!
+

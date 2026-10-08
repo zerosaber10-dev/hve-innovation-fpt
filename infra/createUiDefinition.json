@@ -64,7 +64,9 @@
             "defaultValue": "",
             "toolTip": "Microsoft Entra ID tenant ID (GUID). If left blank, automatically inherits the deployment subscription tenant.",
             "constraints": {
-              "required": false
+              "required": false,
+              "regex": "^$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+              "validationMessage": "Please leave blank or provide a valid Entra Tenant GUID (e.g. 00000000-0000-0000-0000-000000000000)."
             }
           },
           {
@@ -130,7 +132,9 @@
             "defaultValue": "",
             "toolTip": "Azure OpenAI / Foundry endpoint. If empty, a Cognitive Services OpenAI account is provisioned.",
             "constraints": {
-              "required": false
+              "required": false,
+              "regex": "^$|^https://[a-zA-Z0-9-._~:/?#%]{1,500}$",
+              "validationMessage": "Please leave blank or provide a valid HTTPS endpoint URL (e.g. https://my-openai.cognitiveservices.azure.com/)."
             }
           }
         ]
