@@ -213,6 +213,35 @@ def validate_create_ui_definition(
                         f"steps[{idx}] ('{step.get('name')}') must have non-empty "
                         "'elements'"
                     )
+                else:
+                    length_re = re.compile(r"\{(?:\d+)(?:,(?:\d+)|,)?\}")
+                    for elem in elements:
+                        if elem.get("type") == "Microsoft.Common.TextBox":
+                            elem_name = elem.get("name", "<unnamed>")
+                            constraints = elem.get("constraints")
+                            if not constraints or not isinstance(constraints, dict):
+                                errors.append(
+                                    f"TextBox '{elem_name}' missing constraints "
+                                    "(ARM-TTK Textboxes-Are-Well-Formed)"
+                                )
+                                continue
+                            regex_val = constraints.get("regex")
+                            if not regex_val:
+                                errors.append(
+                                    f"TextBox '{elem_name}' missing constraints.regex "
+                                    "(ARM-TTK Textboxes-Are-Well-Formed)"
+                                )
+                            else:
+                                if not constraints.get("validationMessage"):
+                                    errors.append(
+                                        f"TextBox '{elem_name}' has regex but missing "
+                                        "validationMessage"
+                                    )
+                                if not length_re.search(regex_val):
+                                    errors.append(
+                                        f"TextBox '{elem_name}' regex lacks length "
+                                        "quantifier"
+                                    )
 
         # Check outputs
         outputs = params.get("outputs", {})
