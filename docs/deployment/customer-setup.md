@@ -126,7 +126,38 @@ The Copilot answers employee questions based strictly on your organization's off
 
 ---
 
-## 6. Security, Governance, and Support
+## 6. Asynchronous SLA Timers & Escalations (48h & 72h Policy)
+
+To prevent employee requests from being delayed due to out-of-office or busy managers, the Copilot includes an automated SLA workflow backed by **Azure Service Bus** and **Azure Functions**:
+
+```mermaid
+flowchart TD
+    A["Employee Submits Leave Request"] --> B["Status: PENDING_APPROVAL\nApproval Card Sent to Manager via Teams"]
+    B --> C{"Manager Reviews within 48h?"}
+    C -- "Yes (Approve / Reject)" --> D["Ticket Closed & Employee Notified"]
+    C -- "No (48 Business Hours Passed)" --> E["48h SLA Trigger:\nBot Sends Urgent Reminder Card to Manager"]
+    E --> F{"Manager Reviews within Next 24h?"}
+    F -- "Yes (Approve / Reject)" --> D
+    F -- "No (72 Business Hours Passed)" --> G["72h SLA Escalation:\nStatus Transitioned to ESCALATED"]
+    G --> H["Ticket Routed to HR Operations Queue\nHR Admin & Employee Alerted"]
+```
+
+### SLA Policy Specification
+* **Business Calendar Calculation**:
+  * SLA clocks adhere to standard business working hours (Monday–Friday, 09:00–17:00). Weekends and public holidays are automatically excluded from SLA elapsed time.
+* **48-Hour Business Hour Reminder**:
+  * If a request remains in `PENDING_APPROVAL` after **48 business hours**, Azure Functions dispatches an **Urgent Reminder Adaptive Card** directly to the manager's Teams chat.
+  * An attributable `SLA_REMINDER` audit log is appended to Cosmos DB.
+* **72-Hour Business Hour Escalation**:
+  * If the request is still unreviewed after **72 business hours**, the ticket status automatically transitions to **`ESCALATED`**.
+  * The ticket is routed to the **HR Operations Queue** (`HR_OPERATIONS`) for central HR intervention.
+  * Notifications are delivered to HR and the employee informing them of the managerial escalation.
+* **Idempotency & Auto-Cancellation**:
+  * If the manager approves/rejects the request or the employee cancels before the 48h or 72h deadlines, subsequent SLA timer jobs are automatically marked **`SKIPPED`** to prevent unnecessary notifications.
+
+---
+
+## 7. Security, Governance, and Support
 
 ### Enterprise Privacy Safeguards
 * **Medical Privacy**: Medical reasons, sick leave notes, and doctor attachments are strictly masked from manager approval cards and excluded from database indexing.
@@ -138,3 +169,4 @@ If your organization requires technical assistance:
 * **Support Portal**: [https://fptsoftware.com/contact-us](https://fptsoftware.com/contact-us)
 * **Privacy Policy**: [https://fptsoftware.com/our-policy](https://fptsoftware.com/our-policy)
 * **JIT Access**: If requested, publisher support engineers will trigger an Azure JIT request. Your Azure administrators must explicitly review and approve the request in the Azure Portal before temporary, read-only operational telemetry access is granted.
+
