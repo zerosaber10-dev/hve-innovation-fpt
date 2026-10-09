@@ -504,6 +504,14 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
           name: 'WEBSITES_CONTAINER_START_TIME_LIMIT'
           value: '600'
         }
+        {
+          name: 'SLA_REMINDER_HOURS'
+          value: '48'
+        }
+        {
+          name: 'SLA_ESCALATION_HOURS'
+          value: '72'
+        }
       ]
     }
   }
@@ -560,6 +568,14 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
           value: 'python'
+        }
+        {
+          name: 'SLA_REMINDER_HOURS'
+          value: '48'
+        }
+        {
+          name: 'SLA_ESCALATION_HOURS'
+          value: '72'
         }
       ]
     }
