@@ -155,6 +155,25 @@ flowchart TD
 * **Idempotency & Auto-Cancellation**:
   * If the manager approves/rejects the request or the employee cancels before the 48h or 72h deadlines, subsequent SLA timer jobs are automatically marked **`SKIPPED`** to prevent unnecessary notifications.
 
+### Customizing SLA Thresholds & Company Leave Policy
+
+Organizations can adjust the SLA thresholds and policy rules to match their specific internal guidelines:
+
+1. **Customizing SLA Threshold Hours**:
+   * Navigate to the Azure Portal -> find your Managed Resource Group (`mrg-...`).
+   * Select the **App Service** (`hr-time-leave-dev-app-...`) or **Function App** (`hr-time-leave-dev-func-...`).
+   * In the left menu, select **Settings** -> **Environment variables** (or **Configuration** -> **Application settings**).
+   * Update the following settings:
+     * `SLA_REMINDER_HOURS`: Number of business hours before the manager receives a reminder (default: `48`).
+     * `SLA_ESCALATION_HOURS`: Number of business hours before the ticket escalates to HR Operations (default: `72`).
+   * Click **Apply** -> **Confirm**. The service will reload with the new thresholds immediately without requiring any code changes or redeployment.
+
+2. **Customizing Company Leave Policies & Rules (RAG Knowledge Base)**:
+   * Navigate to the Storage Account in the Managed Resource Group (`sthrtimeleave...`).
+   * Select **Containers** -> **`policy-documents`**.
+   * Upload your organization's custom Employee Handbook or HR Leave Policy PDF/Markdown file (e.g., `Company_Leave_Policy_2026.pdf`).
+   * Azure AI Foundry and Cognitive Search automatically re-index the documents so `gpt-6-luna` answers all employee inquiries according to your organization's specific rules, accrual rates, and leave policies.
+
 ---
 
 ## 7. Security, Governance, and Support

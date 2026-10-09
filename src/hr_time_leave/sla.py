@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import threading
 import uuid
 from dataclasses import dataclass, field
@@ -19,8 +20,12 @@ from hr_time_leave.domain import (
     transition_ticket,
 )
 
-DEFAULT_REMINDER_THRESHOLD_HOURS: Final[Decimal] = Decimal("48")
-DEFAULT_ESCALATION_THRESHOLD_HOURS: Final[Decimal] = Decimal("72")
+DEFAULT_REMINDER_THRESHOLD_HOURS: Final[Decimal] = Decimal(
+    os.getenv("SLA_REMINDER_HOURS", "48")
+)
+DEFAULT_ESCALATION_THRESHOLD_HOURS: Final[Decimal] = Decimal(
+    os.getenv("SLA_ESCALATION_HOURS", "72")
+)
 DEFAULT_DISPATCH_WINDOW_MINUTES: Final[int] = 5
 DEFAULT_HR_QUEUE_NAME: Final[str] = "HR_OPERATIONS"
 SYSTEM_ACTOR_ID: Final[str] = "SYSTEM_SLA_ENGINE"
