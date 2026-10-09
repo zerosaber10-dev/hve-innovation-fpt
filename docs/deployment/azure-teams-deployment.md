@@ -96,14 +96,14 @@ All cross-service authentication relies strictly on **Microsoft Entra ID System-
 | Identity Principal | Target Resource | Role Name | Role Definition ID | Scope & Principle of Least Privilege Rationale |
 |---|---|---|---|---|
 | **App Service MI** | Key Vault | **Key Vault Secrets User** | `4633458b-17de-408a-b874-0445c86b69e6` | Allows reading runtime secrets; denies secret write, delete, purge, or administrative control. |
-| **App Service MI** | Service Bus | **Azure Service Bus Data Sender** | `69a216fc-b8fb-44d8-bc22-f94f7c3b9d50` | Grants permission to enqueue scheduled SLA reminder and escalation messages; denies message receive/listen or queue configuration. |
-| **App Service MI** | AI Search | **Search Index Data Contributor** | `8ebe5a5f-32e7-4f83-8015-3ea22f308c37` | Allows querying and indexing policy document chunks; denies search service management. |
-| **App Service MI** | Cognitive Services | **Cognitive Services OpenAI User** | `5e070246-6308-41f1-a775-92a59d4f2d70` | Authorizes generating completions and vector embeddings; denies cognitive account modification. |
-| **App Service MI** | Storage Account | **Storage Blob Data Reader** | `2a2b9908-6ea1-4836-8bb7-5265d162ba8e` | Grants read access to `policy-documents` container; denies writes, deletes, or account changes. |
+| **App Service MI** | Service Bus | **Azure Service Bus Data Sender** | `69a216fc-b8fb-44d8-bc22-1f3c2cd27a39` | Grants permission to enqueue scheduled SLA reminder and escalation messages; denies message receive/listen or queue configuration. |
+| **App Service MI** | AI Search | **Search Index Data Contributor** | `8ebe5a00-799e-43f5-93ac-243d3dce84a7` | Allows querying and indexing policy document chunks; denies search service management. |
+| **App Service MI** | Cognitive Services | **Cognitive Services OpenAI User** | `5e0bd9bd-7b93-4f28-af87-19fc36ad61bd` | Authorizes generating completions and vector embeddings; denies cognitive account modification. |
+| **App Service MI** | Storage Account | **Storage Blob Data Reader** | `2a2b9908-6ea1-4ae2-8e65-a410df84e7d1` | Grants read access to `policy-documents` container; denies writes, deletes, or account changes. |
 | **App Service MI** | Cosmos DB Account | **Cosmos DB Built-in Data Contributor** | `00000000-0000-0000-0000-000000000002` | Permits CRUD on documents in `hr-ticket-store` and `hr-conversation-memory`; denies database/container provisioning. |
 | **Function App MI** | Key Vault | **Key Vault Secrets User** | `4633458b-17de-408a-b874-0445c86b69e6` | Permits reading configuration secrets; denies administrative access. |
-| **Function App MI** | Service Bus | **Azure Service Bus Data Receiver** | `4f6d3a01-b295-46f1-a042-a3c6130c67b3` | Authorizes receiving and completing scheduled SLA messages; denies message sending or namespace changes. |
-| **Function App MI** | Storage Account | **Storage Blob Data Owner** | `b7e6dc6d-f1e8-4753-8033-08440cdcdd80` | Grants lease management and deployment state operations for the Azure Functions runtime. |
+| **Function App MI** | Service Bus | **Azure Service Bus Data Receiver** | `4f6d3b9b-027b-4f4c-9142-0e5a2a2247e0` | Authorizes receiving and completing scheduled SLA messages; denies message sending or namespace changes. |
+| **Function App MI** | Storage Account | **Storage Blob Data Owner** | `b7e6dc6d-f1e8-4753-8033-0f276bb0955b` | Grants lease management and deployment state operations for the Azure Functions runtime. |
 | **Function App MI** | Cosmos DB Account | **Cosmos DB Built-in Data Contributor** | `00000000-0000-0000-0000-000000000002` | Allows reading ticket state before dispatching reminders or executing escalation transitions. |
 
 ---

@@ -329,11 +329,11 @@ class TestAzureBicepArchitectureCompliance:
         # Built-in role definitions referenced
         expected_roles = [
             "4633458b-17de-408a-b874-0445c86b69e6",  # Key Vault Secrets User
-            "69a216fc-b8fb-44d8-bc22-f94f7c3b9d50",  # Service Bus Data Sender
-            "4f6d3a01-b295-46f1-a042-a3c6130c67b3",  # Service Bus Data Receiver
-            "8ebe5a5f-32e7-4f83-8015-3ea22f308c37",  # Search Index Data Contributor
-            "5e070246-6308-41f1-a775-92a59d4f2d70",  # Cognitive Services OpenAI User
-            "2a2b9908-6ea1-4836-8bb7-5265d162ba8e",  # Storage Blob Data Reader
+            "69a216fc-b8fb-44d8-bc22-1f3c2cd27a39",  # Service Bus Data Sender
+            "4f6d3b9b-027b-4f4c-9142-0e5a2a2247e0",  # Service Bus Data Receiver
+            "8ebe5a00-799e-43f5-93ac-243d3dce84a7",  # Search Index Data Contributor
+            "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd",  # Cognitive Services OpenAI User
+            "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",  # Storage Blob Data Reader
             "00000000-0000-0000-0000-000000000002",  # Cosmos DB Data Contributor
         ]
 
