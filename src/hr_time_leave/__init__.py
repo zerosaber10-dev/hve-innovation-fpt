@@ -4,7 +4,9 @@ from hr_time_leave.app import (
     app,
     application,
     generate_agent_response,
+    get_bot_framework_token,
     process_bot_activity,
+    send_bot_framework_activity,
 )
 from hr_time_leave.domain import (
     CERTIFIED_MEDICAL_LEAVE_STATUS,
@@ -140,6 +142,7 @@ __all__ = [
     "create_default_sla_engine",
     "generate_action_token",
     "generate_agent_response",
+    "get_bot_framework_token",
     "get_default_action_token_store",
     "handle_card_action_payload",
     "handle_manager_action",
@@ -148,6 +151,7 @@ __all__ = [
     "parse_policy_document",
     "process_bot_activity",
     "process_service_bus_message",
+    "send_bot_framework_activity",
     "submit_ticket",
     "transition_ticket",
     "validate_ticket",

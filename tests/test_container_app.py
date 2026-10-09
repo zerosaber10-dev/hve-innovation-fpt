@@ -10,6 +10,8 @@ Validates:
 from __future__ import annotations
 
 import json
+import sys
+import time
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -25,9 +27,11 @@ from hr_time_leave import (
     TicketType,
     app,
     generate_agent_response,
+    get_bot_framework_token,
     hr_sla_service_bus_handler,
     process_bot_activity,
     process_service_bus_message,
+    send_bot_framework_activity,
     submit_ticket,
 )
 from hr_time_leave.sla import create_default_sla_engine
@@ -346,6 +350,188 @@ class TestCORSConfiguration:
             == "https://teams.microsoft.com"
         )
         assert response.headers.get("access-control-allow-credentials") == "true"
+
+
+class TestBotFrameworkConnectorIntegration:
+    """Validate outbound activity dispatching and token handling for Bot Connector."""
+
+    def test_given_bot_credentials_when_token_requested_then_returns_jwt(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("BOT_APP_ID", "test-bot-id")
+        monkeypatch.setenv("BOT_APP_PASSWORD", "test-secret")
+        monkeypatch.setenv("AZURE_TENANT_ID", "test-tenant-id")
+
+        class MockResponse:
+            status_code = 200
+
+            def json(self) -> dict[str, Any]:
+                return {"access_token": "mock-jwt-token", "expires_in": 3600}
+
+        def mock_post(*args: Any, **kwargs: Any) -> MockResponse:
+            return MockResponse()
+
+        monkeypatch.setattr("httpx.Client.post", mock_post)
+
+        from hr_time_leave.app import _BOT_TOKEN_CACHE
+
+        _BOT_TOKEN_CACHE.clear()
+
+        token = get_bot_framework_token()
+        assert token == "mock-jwt-token"
+
+    def test_given_cached_token_when_requested_again_then_returns_cached(
+        self,
+    ) -> None:
+        from hr_time_leave.app import _BOT_TOKEN_CACHE
+
+        _BOT_TOKEN_CACHE["token"] = "cached-token"
+        _BOT_TOKEN_CACHE["expires_at"] = time.time() + 3000.0
+
+        token = get_bot_framework_token()
+        assert token == "cached-token"
+
+    def test_given_valid_activity_payload_when_dispatched_then_posts_to_connector_url(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        calls: list[dict[str, Any]] = []
+
+        class MockResponse:
+            status_code = 200
+            text = "OK"
+
+        def mock_post(client_self: Any, url: str, **kwargs: Any) -> MockResponse:
+            calls.append({"url": url, "kwargs": kwargs})
+            return MockResponse()
+
+        monkeypatch.setattr("httpx.Client.post", mock_post)
+        app_mod = sys.modules["hr_time_leave.app"]
+        monkeypatch.setattr(
+            app_mod, "get_bot_framework_token", lambda: "mock-token"
+        )
+
+        success = send_bot_framework_activity(
+            service_url="https://webchat.botframework.com/v3/",
+            conversation_id="conv-abc",
+            activity_payload={"type": "message", "text": "hello"},
+            reply_to_id="act-xyz",
+        )
+        assert success is True
+        assert len(calls) == 1
+        assert (
+            calls[0]["url"]
+            == "https://webchat.botframework.com/v3/conversations/conv-abc/activities/act-xyz"
+        )
+        assert (
+            calls[0]["kwargs"]["headers"]["Authorization"]
+            == "Bearer mock-token"
+        )
+
+    def test_given_connector_failure_when_dispatched_then_returns_false_cleanly(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        class MockResponse:
+            status_code = 500
+            text = "Internal Server Error"
+
+        def mock_post(client_self: Any, url: str, **kwargs: Any) -> MockResponse:
+            return MockResponse()
+
+        monkeypatch.setattr("httpx.Client.post", mock_post)
+        app_mod = sys.modules["hr_time_leave.app"]
+        monkeypatch.setattr(
+            app_mod, "get_bot_framework_token", lambda: None
+        )
+
+        success = send_bot_framework_activity(
+            service_url="https://smba.trafficmanager.net/teams/v3",
+            conversation_id="conv-def",
+            activity_payload={"type": "message", "text": "hello"},
+        )
+        assert success is False
+
+    def test_given_inbound_message_with_service_url_then_triggers_outbound_dispatch(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        dispatched: list[dict[str, Any]] = []
+
+        def mock_send(
+            service_url: str,
+            conversation_id: str,
+            activity_payload: dict[str, Any],
+            reply_to_id: str | None = None,
+        ) -> bool:
+            dispatched.append(
+                {
+                    "service_url": service_url,
+                    "conversation_id": conversation_id,
+                    "payload": activity_payload,
+                    "reply_to_id": reply_to_id,
+                }
+            )
+            return True
+
+        app_mod = sys.modules["hr_time_leave.app"]
+        monkeypatch.setattr(
+            app_mod, "send_bot_framework_activity", mock_send
+        )
+
+        activity = {
+            "type": "message",
+            "id": "act-999",
+            "text": "hi",
+            "serviceUrl": "https://webchat.botframework.com/v3/",
+            "from": {"id": "usr-1", "name": "Bob"},
+            "conversation": {"id": "conv-999"},
+        }
+        result = process_bot_activity(activity)
+        assert result["status"] == "processed"
+        assert len(dispatched) == 1
+        assert (
+            dispatched[0]["service_url"]
+            == "https://webchat.botframework.com/v3/"
+        )
+        assert dispatched[0]["conversation_id"] == "conv-999"
+        assert dispatched[0]["reply_to_id"] == "act-999"
+        assert (
+            "Enterprise HR Time and Leave Copilot"
+            in dispatched[0]["payload"]["text"]
+        )
+
+    def test_given_conversation_update_when_user_joins_then_sends_welcome_activity(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        dispatched: list[dict[str, Any]] = []
+
+        def mock_send(
+            service_url: str,
+            conversation_id: str,
+            activity_payload: dict[str, Any],
+            reply_to_id: str | None = None,
+        ) -> bool:
+            dispatched.append(activity_payload)
+            return True
+
+        app_mod = sys.modules["hr_time_leave.app"]
+        monkeypatch.setattr(
+            app_mod, "send_bot_framework_activity", mock_send
+        )
+        monkeypatch.setenv("BOT_APP_ID", "bot-id-123")
+
+        activity = {
+            "type": "conversationUpdate",
+            "serviceUrl": "https://webchat.botframework.com/v3/",
+            "conversation": {"id": "conv-welcome"},
+            "membersAdded": [
+                {"id": "bot-id-123", "name": "Bot"},
+                {"id": "user-456", "name": "New Employee"},
+            ],
+        }
+        result = process_bot_activity(activity)
+        assert result["status"] == "acknowledged"
+        assert len(dispatched) == 1
+        welcome_msg = dispatched[0]["text"].lower()
+        assert "copilot" in welcome_msg or "assist" in welcome_msg
 
 
 class TestDockerfileCompliance:

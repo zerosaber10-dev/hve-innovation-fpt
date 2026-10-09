@@ -45,6 +45,10 @@ Azure Bot Service requires an Application (Client) ID to authenticate within you
    * **Redirect URI**: Leave blank.
 5. Click **Register**.
 6. On the **Overview** blade of the newly registered application, copy the **Application (client) ID** (a GUID such as `a1b2c3d4-e5f6-7890-abcd-ef1234567890`). You will paste this during the Marketplace wizard.
+7. Under **Manage**, select **Certificates & secrets** > click **+ New client secret**:
+   * **Description**: Enter `Teams Bot Runtime Secret`.
+   * **Expires**: Choose your organization's preferred lifetime (e.g., 180 days or 24 months).
+   * Click **Add**, then immediately copy the secret **Value** (not Secret ID). You will save this to the App Service configuration after deployment.
 
 ---
 
@@ -98,7 +102,21 @@ Once the deployment status indicates **Succeeded**:
 
 ---
 
-### 4.2 Distribute the Copilot in Microsoft Teams
+### 4.2 Configure Bot Credentials (One-time)
+
+To authorize the Copilot web runtime to dispatch replies back to Microsoft Teams and Azure Web Chat:
+
+1. Open the Azure Portal and navigate to your **Managed Resource Group** (`mrg-...`).
+2. Select the **App Service** resource (`hr-time-leave-...-app-...`).
+3. Under **Settings**, select **Environment variables** (or **Configuration**).
+4. In the **App settings** tab, verify or add:
+   * **Name**: `BOT_APP_PASSWORD`
+   * **Value**: Paste the client secret Value generated in Step 3.1.
+5. Click **Apply** (or **Save**). The App Service will automatically restart with active authentication.
+
+---
+
+### 4.3 Distribute the Copilot in Microsoft Teams
 
 Your deployed App Service automatically compiles and hosts the ready-to-use Microsoft Teams app package.
 
@@ -154,25 +172,6 @@ flowchart TD
   * Notifications are delivered to HR and the employee informing them of the managerial escalation.
 * **Idempotency & Auto-Cancellation**:
   * If the manager approves/rejects the request or the employee cancels before the 48h or 72h deadlines, subsequent SLA timer jobs are automatically marked **`SKIPPED`** to prevent unnecessary notifications.
-
-### Customizing SLA Thresholds & Company Leave Policy
-
-Organizations can adjust the SLA thresholds and policy rules to match their specific internal guidelines:
-
-1. **Customizing SLA Threshold Hours**:
-   * Navigate to the Azure Portal -> find your Managed Resource Group (`mrg-...`).
-   * Select the **App Service** (`hr-time-leave-dev-app-...`) or **Function App** (`hr-time-leave-dev-func-...`).
-   * In the left menu, select **Settings** -> **Environment variables** (or **Configuration** -> **Application settings**).
-   * Update the following settings:
-     * `SLA_REMINDER_HOURS`: Number of business hours before the manager receives a reminder (default: `48`).
-     * `SLA_ESCALATION_HOURS`: Number of business hours before the ticket escalates to HR Operations (default: `72`).
-   * Click **Apply** -> **Confirm**. The service will reload with the new thresholds immediately without requiring any code changes or redeployment.
-
-2. **Customizing Company Leave Policies & Rules (RAG Knowledge Base)**:
-   * Navigate to the Storage Account in the Managed Resource Group (`sthrtimeleave...`).
-   * Select **Containers** -> **`policy-documents`**.
-   * Upload your organization's custom Employee Handbook or HR Leave Policy PDF/Markdown file (e.g., `Company_Leave_Policy_2026.pdf`).
-   * Azure AI Foundry and Cognitive Search automatically re-index the documents so `gpt-6-luna` answers all employee inquiries according to your organization's specific rules, accrual rates, and leave policies.
 
 ---
 

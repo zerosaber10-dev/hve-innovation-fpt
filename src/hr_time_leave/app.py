@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from typing import Any
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -195,11 +197,158 @@ def check_readiness() -> dict[str, str]:
     return checks
 
 
+_BOT_TOKEN_CACHE: dict[str, Any] = {"token": None, "expires_at": 0.0}
+
+
+def get_bot_framework_token() -> str | None:
+    """Acquire OAuth2 Bearer token for Microsoft Bot Framework Connector API.
+
+    Caches valid tokens until expiry. Uses client credentials if BOT_APP_PASSWORD
+    is configured, falling back to Azure Managed Identity / DefaultAzureCredential.
+
+    Returns:
+        str | None: Raw JWT access token if authentication succeeded, None otherwise.
+    """
+    global _BOT_TOKEN_CACHE
+    now = time.time()
+    cached_token = _BOT_TOKEN_CACHE.get("token")
+    expires_at = float(_BOT_TOKEN_CACHE.get("expires_at", 0.0))
+    if cached_token and now < expires_at - 60.0:
+        return str(cached_token)
+
+    bot_app_id = os.getenv("BOT_APP_ID") or os.getenv("MICROSOFT_APP_ID")
+    bot_app_password = (
+        os.getenv("BOT_APP_PASSWORD")
+        or os.getenv("MICROSOFT_APP_PASSWORD")
+        or os.getenv("AZURE_CLIENT_SECRET")
+    )
+    tenant_id = (
+        os.getenv("AZURE_TENANT_ID")
+        or os.getenv("MICROSOFT_APP_TENANT_ID")
+        or "botframework.com"
+    )
+
+    if bot_app_id and bot_app_password:
+        token_url = (
+            f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+        )
+        token_payload = {
+            "grant_type": "client_credentials",
+            "client_id": bot_app_id,
+            "client_secret": bot_app_password,
+            "scope": "https://api.botframework.com/.default",
+        }
+        try:
+            with httpx.Client(timeout=10.0) as client:
+                resp = client.post(token_url, data=token_payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    token = data.get("access_token")
+                    expires_in = float(data.get("expires_in", 3600))
+                    _BOT_TOKEN_CACHE["token"] = token
+                    _BOT_TOKEN_CACHE["expires_at"] = now + expires_in
+                    logger.info(
+                        "Successfully acquired Bot Framework token for appId=%s",
+                        bot_app_id,
+                    )
+                    return token
+                logger.warning(
+                    "Failed to acquire Bot Framework token: HTTP %s - %s",
+                    resp.status_code,
+                    resp.text,
+                )
+        except Exception as exc:
+            logger.warning("Error requesting Bot Framework token: %s", exc)
+
+    # Fallback to Azure Managed Identity / DefaultAzureCredential
+    try:
+        from azure.identity import DefaultAzureCredential
+
+        cred = DefaultAzureCredential()
+        token_obj = cred.get_token("https://api.botframework.com/.default")
+        if token_obj and token_obj.token:
+            _BOT_TOKEN_CACHE["token"] = token_obj.token
+            _BOT_TOKEN_CACHE["expires_at"] = float(token_obj.expires_on)
+            logger.info("Acquired Bot Framework token via Managed Identity")
+            return token_obj.token
+    except Exception as exc:
+        logger.debug(
+            "Managed Identity token retrieval for Bot Framework skipped/failed: %s",
+            exc,
+        )
+
+    return None
+
+
+def send_bot_framework_activity(
+    service_url: str,
+    conversation_id: str,
+    activity_payload: dict[str, Any],
+    reply_to_id: str | None = None,
+) -> bool:
+    """Dispatch activity payload to Microsoft Bot Framework Connector service.
+
+    Args:
+        service_url: Target Bot Connector service URL (e.g. from incoming activity).
+        conversation_id: Target conversation identifier.
+        activity_payload: Complete Activity schema dictionary.
+        reply_to_id: Optional ID of the parent activity being replied to.
+
+    Returns:
+        bool: True if Connector accepted activity (HTTP 200/201/202), False otherwise.
+    """
+    clean_service_url = service_url.rstrip("/")
+    if clean_service_url.endswith("/v3"):
+        base_endpoint = clean_service_url
+    else:
+        base_endpoint = f"{clean_service_url}/v3"
+
+    if reply_to_id:
+        endpoint = (
+            f"{base_endpoint}/conversations/{conversation_id}/activities/{reply_to_id}"
+        )
+    else:
+        endpoint = (
+            f"{base_endpoint}/conversations/{conversation_id}/activities"
+        )
+
+    headers: dict[str, str] = {"Content-Type": "application/json"}
+    token = get_bot_framework_token()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    try:
+        with httpx.Client(timeout=10.0) as client:
+            resp = client.post(endpoint, json=activity_payload, headers=headers)
+            if resp.status_code in (200, 201, 202):
+                logger.info(
+                    "Successfully delivered Bot Framework activity to %s (HTTP %s)",
+                    endpoint,
+                    resp.status_code,
+                )
+                return True
+            logger.warning(
+                "Bot Framework Connector rejected activity at %s: HTTP %s - %s",
+                endpoint,
+                resp.status_code,
+                resp.text,
+            )
+            return False
+    except Exception as exc:
+        logger.warning(
+            "Exception delivering Bot Framework activity to %s: %s",
+            endpoint,
+            exc,
+        )
+        return False
+
+
 def process_bot_activity(activity: dict[str, Any]) -> dict[str, Any]:
     """Process incoming Microsoft Bot Framework or Teams activity payload.
 
     Validates required activity attributes ('type') and dispatches either to
-    card action handler or conversational message processor.
+    card action handler or conversational message processor. Also proactively
+    delivers response activities back to Microsoft Bot Connector serviceUrl.
 
     Args:
         activity: Ingested activity payload dictionary.
@@ -217,19 +366,29 @@ def process_bot_activity(activity: dict[str, Any]) -> dict[str, Any]:
     if not activity_type or not isinstance(activity_type, str):
         raise ValueError("Missing or invalid required activity field: 'type'")
 
+    service_url = activity.get("serviceUrl")
+    conversation = activity.get("conversation")
+    conv_id = (
+        conversation.get("id")
+        if isinstance(conversation, dict) and "id" in conversation
+        else None
+    )
+    activity_id = activity.get("id")
+    bot_app_id = os.getenv("BOT_APP_ID") or os.getenv("MICROSOFT_APP_ID") or ""
+
     # Teams card action / invoke handling
     if activity_type in ("invoke", "adaptiveCard/action"):
         card_value = activity.get("value")
         if isinstance(card_value, dict) and "action" in card_value:
             return {
                 "status": "accepted",
-                "activityId": activity.get("id", ""),
+                "activityId": activity_id or "",
                 "action": card_value.get("action"),
                 "ticket_id": card_value.get("ticket_id"),
             }
         return {
             "status": "accepted",
-            "activityId": activity.get("id", ""),
+            "activityId": activity_id or "",
             "type": activity_type,
         }
 
@@ -243,19 +402,81 @@ def process_bot_activity(activity: dict[str, Any]) -> dict[str, Any]:
             else "User"
         )
         response_text = generate_agent_response(text, sender=sender)
+
+        # Proactively dispatch response back to Bot Framework Connector
+        # if serviceUrl is present in inbound activity
+        if service_url and conv_id:
+            outbound_activity = {
+                "type": "message",
+                "from": {
+                    "id": bot_app_id or "hr-time-leave-copilot",
+                    "name": "Enterprise HR Time and Leave Copilot",
+                },
+                "recipient": (
+                    sender_info
+                    if isinstance(sender_info, dict)
+                    else {"id": "User", "name": "User"}
+                ),
+                "conversation": conversation,
+                "replyToId": activity_id,
+                "text": response_text,
+            }
+            send_bot_framework_activity(
+                service_url=service_url,
+                conversation_id=conv_id,
+                activity_payload=outbound_activity,
+                reply_to_id=activity_id,
+            )
+
         return {
             "type": "message",
             "status": "processed",
             "recipient": sender_info,
             "text": response_text,
-            "conversation": activity.get("conversation"),
+            "conversation": conversation,
         }
+
+    # Welcome message on conversationUpdate when users join
+    if activity_type == "conversationUpdate":
+        members_added = activity.get("membersAdded")
+        if (
+            service_url
+            and conv_id
+            and isinstance(members_added, list)
+            and members_added
+        ):
+            human_members = [
+                m
+                for m in members_added
+                if isinstance(m, dict) and m.get("id") != bot_app_id
+            ]
+            if human_members:
+                welcome_text = (
+                    "Hello! I am your Enterprise HR Time and Leave Copilot. "
+                    "I can assist with annual leave, sick leave, overtime, "
+                    "and attendance adjustments. How can I help you today?"
+                )
+                welcome_activity = {
+                    "type": "message",
+                    "from": {
+                        "id": bot_app_id or "hr-time-leave-copilot",
+                        "name": "Enterprise HR Time and Leave Copilot",
+                    },
+                    "recipient": human_members[0],
+                    "conversation": conversation,
+                    "text": welcome_text,
+                }
+                send_bot_framework_activity(
+                    service_url=service_url,
+                    conversation_id=conv_id,
+                    activity_payload=welcome_activity,
+                )
 
     # Other event types (conversationUpdate, installationUpdate, etc.)
     return {
         "status": "acknowledged",
         "type": activity_type,
-        "activityId": activity.get("id", ""),
+        "activityId": activity_id or "",
     }
 
 
@@ -305,6 +526,13 @@ async def bot_messages_endpoint(request: Request) -> dict[str, Any]:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Payload must be a JSON object",
         )
+
+    logger.info(
+        "Received Bot Framework activity type=%s id=%s channel=%s",
+        payload.get("type"),
+        payload.get("id"),
+        payload.get("channelId"),
+    )
 
     try:
         return process_bot_activity(payload)
