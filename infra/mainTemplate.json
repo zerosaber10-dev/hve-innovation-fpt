@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.47.16.16243",
-      "templateHash": "2007205132939799544"
+      "templateHash": "2619864499479669606"
     }
   },
   "parameters": {
@@ -116,13 +116,13 @@
     },
     "roleDefinitionIds": {
       "keyVaultSecretsUser": "4633458b-17de-408a-b874-0445c86b69e6",
-      "serviceBusDataSender": "69a216fc-b8fb-44d8-bc22-f94f7c3b9d50",
-      "serviceBusDataReceiver": "4f6d3a01-b295-46f1-a042-a3c6130c67b3",
-      "searchIndexDataContributor": "8ebe5a5f-32e7-4f83-8015-3ea22f308c37",
-      "searchServiceContributor": "7ca78c08-252a-4471-8641-05f40b2244eb",
-      "cognitiveServicesOpenAiUser": "5e070246-6308-41f1-a775-92a59d4f2d70",
-      "storageBlobDataReader": "2a2b9908-6ea1-4836-8bb7-5265d162ba8e",
-      "storageBlobDataOwner": "b7e6dc6d-f1e8-4753-8033-08440cdcdd80"
+      "serviceBusDataSender": "69a216fc-b8fb-44d8-bc22-1f3c2cd27a39",
+      "serviceBusDataReceiver": "4f6d3b9b-027b-4f4c-9142-0e5a2a2247e0",
+      "searchIndexDataContributor": "8ebe5a00-799e-43f5-93ac-243d3dce84a7",
+      "searchServiceContributor": "7ca78c08-252a-4471-8644-bb5ff32d4ba0",
+      "cognitiveServicesOpenAiUser": "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd",
+      "storageBlobDataReader": "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",
+      "storageBlobDataOwner": "b7e6dc6d-f1e8-4753-8033-0f276bb0955b"
     },
     "cosmosDataContributorRoleId": "00000000-0000-0000-0000-000000000002",
     "openAiResolvedEndpoint": "[if(empty(parameters('existingOpenAiEndpoint')), format('https://{0}.cognitiveservices.azure.com/', toLower(variables('names').cognitiveService)), parameters('existingOpenAiEndpoint'))]"
@@ -463,7 +463,8 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.CognitiveServices/accounts', variables('names').cognitiveService)]"
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('names').cognitiveService)]",
+        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', variables('names').cognitiveService, 'gpt-6-luna')]"
       ]
     },
     {
