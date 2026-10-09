@@ -63,8 +63,8 @@ In the left menu, select **Properties**.
 ### 3.2 Legal Contracts & Privacy Policy
 * **Use Microsoft's Standard Contract**: Check **Yes** (Recommended. This uses Microsoft's standard commercial terms and eliminates legal review delays).
 * **Terms of use**: Leave blank if Microsoft Standard Contract is checked, or provide a URL to your company's terms (e.g., `https://github.com/zerosaber10-dev/hve-innovation-fpt/blob/main/LICENSE`).
-* **Privacy policy URL**: Enter a valid HTTPS link, e.g.:
-  `https://github.com/zerosaber10-dev/hve-innovation-fpt/blob/main/docs/deployment/azure-managed-application.md#2-customer-data-sovereignty--managed-resource-group-mrg`
+* **Privacy policy URL**: Enter a valid HTTPS link to your corporate policy:
+  `https://fptsoftware.com/our-policy`
 * Click **Save draft**.
 
 ---
@@ -103,9 +103,9 @@ Add up to 3 keywords:
 3. `Microsoft Teams`
 
 ### 4.3 Support & Contact Information
-* **Help link**: `https://github.com/zerosaber10-dev/hve-innovation-fpt/issues`
+* **Help link**: `https://fptsoftware.com/contact-us`
 * **Customer support contact**:
-  * Name: `Hung Duy Ho` (or your company support lead)
+  * Name: `Hung Duy Ho` (or FPT Software Support Team)
   * Email: `hungduyhoqaz@gmail.com`
   * Phone: `+84-900-000-000` (or company phone)
 * **Engineering contact**:
