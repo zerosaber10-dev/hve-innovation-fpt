@@ -481,6 +481,7 @@ class TestBotFrameworkConnectorIntegration:
             "id": "act-999",
             "text": "hi",
             "serviceUrl": "https://webchat.botframework.com/v3/",
+            "recipient": {"id": "my-channel-bot", "name": "BotName"},
             "from": {"id": "usr-1", "name": "Bob"},
             "conversation": {"id": "conv-999"},
         }
@@ -493,6 +494,7 @@ class TestBotFrameworkConnectorIntegration:
         )
         assert dispatched[0]["conversation_id"] == "conv-999"
         assert dispatched[0]["reply_to_id"] == "act-999"
+        assert dispatched[0]["payload"]["from"]["id"] == "my-channel-bot"
         assert (
             "Enterprise HR Time and Leave Copilot"
             in dispatched[0]["payload"]["text"]
@@ -522,14 +524,16 @@ class TestBotFrameworkConnectorIntegration:
             "type": "conversationUpdate",
             "serviceUrl": "https://webchat.botframework.com/v3/",
             "conversation": {"id": "conv-welcome"},
+            "recipient": {"id": "bot-service-handle", "name": "HR Bot"},
             "membersAdded": [
-                {"id": "bot-id-123", "name": "Bot"},
+                {"id": "bot-service-handle", "name": "Bot"},
                 {"id": "user-456", "name": "New Employee"},
             ],
         }
         result = process_bot_activity(activity)
         assert result["status"] == "acknowledged"
         assert len(dispatched) == 1
+        assert dispatched[0]["from"]["id"] == "bot-service-handle"
         welcome_msg = dispatched[0]["text"].lower()
         assert "copilot" in welcome_msg or "assist" in welcome_msg
 

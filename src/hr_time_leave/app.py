@@ -375,6 +375,17 @@ def process_bot_activity(activity: dict[str, Any]) -> dict[str, Any]:
     )
     activity_id = activity.get("id")
     bot_app_id = os.getenv("BOT_APP_ID") or os.getenv("MICROSOFT_APP_ID") or ""
+    bot_recipient = activity.get("recipient")
+    bot_id = (
+        bot_recipient.get("id")
+        if isinstance(bot_recipient, dict) and bot_recipient.get("id")
+        else (bot_app_id or "hr-time-leave-copilot")
+    )
+    bot_name = (
+        bot_recipient.get("name")
+        if isinstance(bot_recipient, dict) and bot_recipient.get("name")
+        else "Enterprise HR Time and Leave Copilot"
+    )
 
     # Teams card action / invoke handling
     if activity_type in ("invoke", "adaptiveCard/action"):
@@ -409,8 +420,8 @@ def process_bot_activity(activity: dict[str, Any]) -> dict[str, Any]:
             outbound_activity = {
                 "type": "message",
                 "from": {
-                    "id": bot_app_id or "hr-time-leave-copilot",
-                    "name": "Enterprise HR Time and Leave Copilot",
+                    "id": bot_id,
+                    "name": bot_name,
                 },
                 "recipient": (
                     sender_info
@@ -448,7 +459,9 @@ def process_bot_activity(activity: dict[str, Any]) -> dict[str, Any]:
             human_members = [
                 m
                 for m in members_added
-                if isinstance(m, dict) and m.get("id") != bot_app_id
+                if isinstance(m, dict)
+                and m.get("id") != bot_id
+                and m.get("id") != bot_app_id
             ]
             if human_members:
                 welcome_text = (
@@ -459,8 +472,8 @@ def process_bot_activity(activity: dict[str, Any]) -> dict[str, Any]:
                 welcome_activity = {
                     "type": "message",
                     "from": {
-                        "id": bot_app_id or "hr-time-leave-copilot",
-                        "name": "Enterprise HR Time and Leave Copilot",
+                        "id": bot_id,
+                        "name": bot_name,
                     },
                     "recipient": human_members[0],
                     "conversation": conversation,
